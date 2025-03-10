@@ -1,7 +1,7 @@
 import requests
-import json
 import os
 from dotenv import load_dotenv
+import sqlite3
 
 load_dotenv()
 
@@ -34,9 +34,35 @@ def get_tokens(authorization_code):
     return access_token_data["access_token"], access_token_data["refresh_token"]
 
 
+def store_tokens_in_db(access_token, refresh_token):
+    conn = sqlite3.connect("strava_activities.db")
+    cursor = conn.cursor()
+
+    # Create table if it doesn't exist
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tokens (
+            id INTEGER PRIMARY KEY,
+            access_token TEXT NOT NULL,
+            refresh_token TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Insert or update tokens
+    cursor.execute(
+        """
+        INSERT OR REPLACE INTO tokens (id, access_token, refresh_token)
+        VALUES (1, ?, ?)
+    """,
+        (access_token, refresh_token),
+    )
+
+    conn.commit()
+    conn.close()
+
+
 if __name__ == "__main__":
     authorization_code = get_authorization_code()
     access_token, refresh_token = get_tokens(authorization_code)
 
-    with open("strava_tokens.json", "w") as f:
-        json.dump({"access_token": access_token, "refresh_token": refresh_token}, f)
+    store_tokens_in_db(access_token, refresh_token)
