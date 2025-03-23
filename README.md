@@ -22,3 +22,4 @@ Example queries:
 - "What was my longest run last month?"
 - "Show me my average speed on bike rides this year"
 - "How many activities did I do in 2023?"
+- "What was my average heart rate during my last 5 runs?"
