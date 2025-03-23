@@ -34,12 +34,8 @@ def initialize_agents(shared_memory=None):
 
 
 def process_query(classify_agent, sql_agent, response_agent, query):
-    """
-    Process a user query through the simplified agent pipeline.
+    """Process a user query through the simplified agent pipeline."""
 
-    Returns:
-        A dictionary with query results and visualization data if applicable.
-    """
     # Step 1: Classify the query
     classification = classify_agent.run(QueryClassifyInput(query=query))
 

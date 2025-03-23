@@ -5,11 +5,21 @@ Simplified Streamlit interface for StravaTalk.
 import streamlit as st
 from dotenv import load_dotenv
 import pandas as pd
+import traceback
 
 from atomic_agents.lib.components.agent_memory import AgentMemory
 from orchestrator import initialize_agents, process_query
-from visualization import create_visualization, display_visualization
+from visualization import create_visualization, display_visualization, validate_chart_inputs
 from agents.classify_agent import QueryType
+from utils.debug_utils import (
+    setup_debug_mode, 
+    show_debug_header, 
+    show_data_debug, 
+    show_chart_debug, 
+    show_error_debug,
+    debug_visualization,
+    is_debug_mode
+)
 
 
 def create_interface():
@@ -21,19 +31,13 @@ def create_interface():
     if "is_processing" not in st.session_state:
         st.session_state.is_processing = False
     
-    # Check for debug mode in query parameters
-    query_params = st.query_params
-    debug_mode = query_params.get('debug') == 'true'
-    
-    # Set debug mode in session state
-    st.session_state.debug_mode = debug_mode
+    # Setup debug mode from URL parameters
+    debug_mode = setup_debug_mode()
     
     # Show title with debug indicator if in debug mode
-    if st.session_state.debug_mode:
+    if debug_mode:
         st.title("StravaTalk 🏃‍♂️ 🐛")
-        st.sidebar.success("Debug mode is ON")
-        st.sidebar.info("Debug information will be shown throughout the interface.")
-        st.sidebar.write("Query parameters:", query_params)
+        show_debug_header()
     else:
         st.title("StravaTalk 🏃‍♂️")
         
@@ -78,63 +82,34 @@ def create_interface():
                     if isinstance(data, list):
                         data = pd.DataFrame(data)
 
-                    # Ensure columns exist
-                    x_column = message["chart_info"]["x_column"]
-                    y_columns = message["chart_info"]["y_columns"]
-                    chart_type = message["chart_info"].get("chart_type", "line")
-
-                    # Debug info
-                    if st.session_state.get("debug_mode", False):
-                        st.write("Debug Information:")
-                        st.write("Visualization data shape:", data.shape)
-                        st.write("X-column:", x_column)
-                        st.write("Y-columns:", y_columns)
-                        st.write("Chart type:", chart_type)
-                        st.write("Data types:")
-                        st.write(data.dtypes)
-                        st.write("Data Preview:")
-                        st.dataframe(data.head(10))
-
-                    if x_column not in data.columns:
-                        st.warning(
-                            f"X-axis column '{x_column}' not in data columns: {list(data.columns)}"
-                        )
+                    chart_info = message["chart_info"]
+                    
+                    # Show debug info if needed
+                    if is_debug_mode():
+                        debug_visualization(data, chart_info, st)
+                    
+                    # Validate chart inputs
+                    is_valid, valid_y_columns, error_message = validate_chart_inputs(
+                        data, chart_info["x_column"], chart_info["y_columns"]
+                    )
+                    
+                    if not is_valid:
+                        st.warning(error_message)
                         continue
-
-                    valid_y_columns = [col for col in y_columns if col in data.columns]
-                    if not valid_y_columns:
-                        st.warning(
-                            f"None of the Y-axis columns {y_columns} found in data columns: {list(data.columns)}"
-                        )
-                        continue
-
+                    
                     # Create and display chart
                     chart = create_visualization(
-                        data, x_column, valid_y_columns, chart_type
+                        data, 
+                        chart_info["x_column"], 
+                        valid_y_columns, 
+                        chart_info.get("chart_type", "line")
                     )
                     display_visualization(chart)
+                    
                 except Exception as e:
                     st.error(f"Error displaying visualization: {str(e)}")
-                    
-                    # Show detailed error information in debug mode
-                    if st.session_state.get("debug_mode", False):
-                        import traceback
-                        st.error("Debug traceback:")
-                        st.code(traceback.format_exc())
-                        
-                        # Additional debugging information
-                        st.warning("Visualization parameters causing the error:")
-                        st.write(f"- X column: {x_column}")
-                        st.write(f"- Y columns: {y_columns}")
-                        st.write(f"- Chart type: {chart_type}")
-                        
-                        # Check if specific columns exist
-                        if x_column not in data.columns:
-                            st.error(f"X-axis column '{x_column}' not found in data!")
-                        
-                        missing_y = [c for c in y_columns if c not in data.columns]
-                        if missing_y:
-                            st.error(f"These Y-axis columns are missing: {missing_y}")
+                    if is_debug_mode():
+                        show_error_debug(e, data, chart_info, st)
 
     # Query input
     if prompt := st.chat_input("Ask me anything about your Strava activities..."):
@@ -180,19 +155,10 @@ def handle_query(user_query):
                         status.write(f"Query returned {len(result['data'])} rows")
 
                         # Debug mode - show data info
-                        if st.session_state.get("debug_mode", False):
-                            status.write("Data information:")
-                            status.write(f"- Shape: {result['data'].shape}")
-                            status.write(f"- Columns: {list(result['data'].columns)}")
-                            status.write(f"- Data types:\n{result['data'].dtypes}")
-                            
-                            status.write("Data Preview:")
-                            status.dataframe(result['data'].head(10))
-
+                        if is_debug_mode():
+                            show_data_debug(result["data"], status)
                             if result.get("chart_info"):
-                                status.write("Chart configuration:")
-                                for key, value in result["chart_info"].items():
-                                    status.write(f"- {key}: {value}")
+                                show_chart_debug(result["chart_info"], status)
 
                     status.update(
                         label="Query processed successfully!", state="complete"
@@ -221,30 +187,26 @@ def handle_query(user_query):
             y_columns = chart_info["y_columns"]
             chart_type = chart_info.get("chart_type", "line")
 
-            # Validate columns exist
-            if x_column in result["data"].columns:
-                # Filter y_columns to only those that exist
-                valid_y_columns = [
-                    col for col in y_columns if col in result["data"].columns
-                ]
+            # Validate columns exist using the validation function
+            is_valid, valid_y_columns, _ = validate_chart_inputs(result["data"], x_column, y_columns)
+            
+            if is_valid:
+                assistant_message["chart_data"] = result["data"].to_dict("records")
+                assistant_message["chart_info"] = {
+                    "x_column": x_column,
+                    "y_columns": valid_y_columns,
+                    "chart_type": chart_type,
+                }
 
-                if valid_y_columns:
-                    assistant_message["chart_data"] = result["data"].to_dict("records")
-                    assistant_message["chart_info"] = {
-                        "x_column": x_column,
-                        "y_columns": valid_y_columns,
-                        "chart_type": chart_type,
-                    }
-
-                    # Handle date-like columns for conversion
-                    if "date" in x_column.lower() or "time" in x_column.lower():
-                        # Ensure date columns are properly formatted
-                        try:
-                            result["data"][x_column] = pd.to_datetime(
-                                result["data"][x_column]
-                            )
-                        except:
-                            pass  # Continue if conversion fails
+                # Handle date-like columns for conversion
+                if "date" in x_column.lower() or "time" in x_column.lower():
+                    # Ensure date columns are properly formatted
+                    try:
+                        result["data"][x_column] = pd.to_datetime(
+                            result["data"][x_column]
+                        )
+                    except:
+                        pass  # Continue if conversion fails
 
         # Add to chat history
         st.session_state.chat_history.append(assistant_message)
@@ -272,33 +234,8 @@ def handle_query(user_query):
                     display_visualization(chart)
                 except Exception as e:
                     st.error(f"Error displaying visualization: {str(e)}")
-                    if st.session_state.get("debug_mode", False):
-                        import traceback
-                        st.error("Debug traceback:")
-                        st.code(traceback.format_exc())
-                        
-                        # Visualization debugging information
-                        x_col = assistant_message["chart_info"]["x_column"]
-                        y_cols = assistant_message["chart_info"]["y_columns"]
-                        c_type = assistant_message["chart_info"].get("chart_type", "line")
-                        
-                        st.warning("Visualization parameters causing the error:")
-                        st.write(f"- X column: {x_col}")
-                        st.write(f"- Y columns: {y_cols}")
-                        st.write(f"- Chart type: {c_type}")
-                        
-                        # Data information
-                        st.write("Data information:")
-                        st.write(f"- Columns: {list(data.columns)}")
-                        st.write(f"- Data types:\n{data.dtypes}")
-                        
-                        # Check if specific columns exist
-                        if x_col not in data.columns:
-                            st.error(f"X-axis column '{x_col}' not found in data!")
-                        
-                        missing_y = [c for c in y_cols if c not in data.columns]
-                        if missing_y:
-                            st.error(f"These Y-axis columns are missing: {missing_y}")
+                    if is_debug_mode():
+                        show_error_debug(e, data, assistant_message["chart_info"], st)
 
     except Exception as e:
         # Add error message to chat history
@@ -312,8 +249,8 @@ def handle_query(user_query):
             st.error(error_message)
 
         # Log detailed error
-        import traceback
-        st.error(traceback.format_exc())
+        if is_debug_mode():
+            st.error(traceback.format_exc())
         
     finally:
         # Always turn off processing mode when done

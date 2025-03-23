@@ -1,12 +1,26 @@
-"""
-Visualization module for Strava data.
-"""
+"""Visualization module for Strava data."""
 
 import pandas as pd
 import altair as alt
 import streamlit as st
 from typing import List
 import datetime
+
+
+def validate_chart_inputs(data, x_column, y_columns):
+    """Validate chart inputs and return valid columns.
+    
+    Returns:
+        tuple: (is_valid, valid_y_columns, error_message)
+    """
+    if x_column not in data.columns:
+        return False, [], f"X-axis column '{x_column}' not in data columns: {list(data.columns)}"
+    
+    valid_y_columns = [col for col in y_columns if col in data.columns]
+    if not valid_y_columns:
+        return False, [], f"None of the Y-axis columns {y_columns} found in data columns: {list(data.columns)}"
+    
+    return True, valid_y_columns, None
 
 # Time formatting helper for Altair axis labels
 TIME_FORMAT_EXPR = "datum.value >= 60 ? (floor(datum.value/60) >= 60 ? floor(floor(datum.value/60)/60) + ':' + (floor(datum.value/60) % 60 < 10 ? '0' : '') + toString(floor(datum.value/60) % 60) + ':' + (floor(datum.value % 60) < 10 ? '0' : '') + toString(floor(datum.value % 60)) : floor(datum.value/60) + ':' + (floor(datum.value % 60) < 10 ? '0' : '') + toString(floor(datum.value % 60))) : datum.value + ':00'"
