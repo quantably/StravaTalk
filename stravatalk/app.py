@@ -17,12 +17,6 @@ def create_interface():
     # Must be the first Streamlit command
     st.set_page_config(page_title="StravaTalk", page_icon="🏃‍♂️", layout="centered")
     
-    # Add refresh counter to verify session state persistence
-    if "counter" not in st.session_state:
-        st.session_state.counter = 0
-    st.session_state.counter += 1
-    st.sidebar.write(f"Session refresh count: {st.session_state.counter}")
-    
     # Flag to track when we're processing a query (to prevent unwanted visualizations)
     if "is_processing" not in st.session_state:
         st.session_state.is_processing = False
