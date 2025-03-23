@@ -15,7 +15,7 @@ from agents.classify_agent import QueryType
 def create_interface():
     """Create the Streamlit interface for StravaTalk."""
     # Must be the first Streamlit command
-    st.set_page_config(page_title="StravaTalk", page_icon="🏃‍♂️", layout="centered")
+    st.set_page_config(page_title="StravaTalk", page_icon="🏃‍♂️", layout="centered", initial_sidebar_state="collapsed")
     
     # Flag to track when we're processing a query (to prevent unwanted visualizations)
     if "is_processing" not in st.session_state:
@@ -23,23 +23,16 @@ def create_interface():
     
     # Check for debug mode in query parameters
     query_params = st.query_params
-    debug_from_url = query_params.get('debug') == 'true'
+    debug_mode = query_params.get('debug') == 'true'
     
-    # Add debug toggle in sidebar, default to URL param if present
-    debug_sidebar = st.sidebar.checkbox("Debug Mode", value=debug_from_url)
-    
-    # Set debug mode based on sidebar or URL
-    st.session_state.debug_mode = debug_sidebar
+    # Set debug mode in session state
+    st.session_state.debug_mode = debug_mode
     
     # Show title with debug indicator if in debug mode
     if st.session_state.debug_mode:
         st.title("StravaTalk 🏃‍♂️ 🐛")
         st.sidebar.success("Debug mode is ON")
         st.sidebar.info("Debug information will be shown throughout the interface.")
-        # Update URL if debug was turned on from sidebar but not in URL
-        if not debug_from_url and debug_sidebar:
-            query_params['debug'] = 'true'
-        # Show query parameters in debug mode
         st.sidebar.write("Query parameters:", query_params)
     else:
         st.title("StravaTalk 🏃‍♂️")
