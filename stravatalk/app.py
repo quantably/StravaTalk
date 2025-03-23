@@ -24,7 +24,7 @@ from utils.debug_utils import (
 
 def create_interface():
     """Create the Streamlit interface for StravaTalk."""
-    st.set_page_config(page_title="StravaTalk", page_icon="🏃‍♂️", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="StravaTalk", page_icon="🏃‍♂️", layout="centered", initial_sidebar_state="collapsed")  # Configure Streamlit page
     
     if "is_processing" not in st.session_state:
         st.session_state.is_processing = False
