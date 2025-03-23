@@ -1,5 +1,5 @@
 """
-Simplified orchestrator for the StravaTalk application.
+Orchestrator for the StravaTalk application.
 """
 
 import os
@@ -18,12 +18,11 @@ from utils.db_utils import get_table_definitions, execute_sql_query
 
 
 def initialize_agents(shared_memory=None):
-    """Initialize all agents with simplified interfaces."""
+    """Initialize all agents."""
     api_key = os.getenv("OPENAI_API_KEY")
     client = instructor.from_openai(openai.OpenAI(api_key=api_key))
     model = "gpt-4o-mini"
 
-    # Create agents with a shared memory
     classify_agent = create_classification_agent(
         client, memory=shared_memory, model=model
     )
@@ -34,7 +33,7 @@ def initialize_agents(shared_memory=None):
 
 
 def process_query(classify_agent, sql_agent, response_agent, query):
-    """Process a user query through the simplified agent pipeline."""
+    """Process a user query through the agent pipeline."""
 
     # Step 1: Classify the query
     classification = classify_agent.run(QueryClassifyInput(query=query))
