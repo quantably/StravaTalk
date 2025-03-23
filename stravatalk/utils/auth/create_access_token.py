@@ -11,6 +11,9 @@ CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 AUTHORIZATION_URL = f"https://www.strava.com/oauth/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri=https://google.com&approval_prompt=force&scope=activity:read"
 TOKEN_URL = "https://www.strava.com/oauth/token"
 
+# Add this constant near the top with other constants
+STRAVA_DB_PATH = os.getenv("STRAVA_DB_PATH")
+
 
 def get_authorization_code():
     # Redirect to Strava authorization page
@@ -35,7 +38,7 @@ def get_tokens(authorization_code):
 
 
 def store_tokens_in_db(access_token, refresh_token):
-    conn = sqlite3.connect("strava_activities.db")
+    conn = sqlite3.connect(STRAVA_DB_PATH)
     cursor = conn.cursor()
 
     # Create table if it doesn't exist
@@ -64,5 +67,4 @@ def store_tokens_in_db(access_token, refresh_token):
 if __name__ == "__main__":
     authorization_code = get_authorization_code()
     access_token, refresh_token = get_tokens(authorization_code)
-
     store_tokens_in_db(access_token, refresh_token)

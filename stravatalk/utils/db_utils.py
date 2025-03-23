@@ -10,14 +10,24 @@ COLUMN_DESCRIPTIONS = {
         "columns": {
             "id": "unique identifier for each activity",
             "name": "name of the activity",
-            "distance": "total distance covered in meters",
-            "moving_time": "time spent moving in seconds",
-            "elapsed_time": "total elapsed time in seconds",
+            "distance": "total distance covered in meters (convert to km with distance / 1000)",
+            "moving_time": "time spent moving in seconds (display in HH:MM:SS format)",
+            "elapsed_time": "total elapsed time in seconds (display in HH:MM:SS format)",
             "total_elevation_gain": "total elevation gain in meters",
             "type": "type of activity (e.g., Run, Ride, Swim)",
             "start_date": "when the activity started",
+            "_derived_pace": "calculated pace in minutes per mile: (moving_time / 60) / (distance / 1609.34) AS pace_min_mi",
         },
-    }
+    },
+    "tokens": {
+        "description": "Table containing a users Strava token records",
+        "columns": {
+            "id": "Unique identifier for the record (auto-incrementing integer)",
+            "access_token": "OAuth access token for Strava API authentication",
+            "refresh_token": "OAuth refresh token used to obtain new access tokens",
+            "created_at": "Timestamp when the record was created",
+        },
+    },
 }
 
 

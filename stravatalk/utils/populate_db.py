@@ -1,6 +1,6 @@
 import requests
 import sqlite3
-import json
+import os
 
 
 ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities"
@@ -32,7 +32,7 @@ def fetch_and_store_activities(access_token):
     page = 1
     per_page = 30
 
-    conn = sqlite3.connect("strava_activities.db")
+    conn = sqlite3.connect(os.getenv("STRAVA_DB_PATH"))
     c = conn.cursor()
     c.execute("""
         CREATE TABLE IF NOT EXISTS activities (
@@ -65,9 +65,11 @@ def fetch_and_store_activities(access_token):
 
 
 def main():
-    with open("strava_tokens.json", "r") as f:
-        tokens = json.load(f)
-    access_token = tokens["access_token"]
+    # get from db
+    conn = sqlite3.connect(os.getenv("STRAVA_DB_PATH"))
+    c = conn.cursor()
+    c.execute("SELECT access_token FROM tokens WHERE id = 1")
+    access_token = c.fetchone()[0]
     fetch_and_store_activities(access_token)
 
 

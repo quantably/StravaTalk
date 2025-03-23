@@ -1,3 +1,7 @@
+"""
+Simplified SQL agent for converting natural language queries to SQL.
+"""
+
 from typing import Optional, List, Dict, Any
 from pydantic import Field
 
@@ -14,81 +18,67 @@ class TableDefinition(BaseIOSchema):
     columns: List[Dict[str, Any]] = Field(..., description="Columns in the table")
 
 
-class NLToSQLAgentInputSchema(BaseIOSchema):
-    """Input schema for the NL-to-SQL agent."""
+class SQLAgentInput(BaseIOSchema):
+    """Simplified input schema for SQL generation."""
 
     query: str = Field(..., description="Natural language query to convert to SQL")
-    database_type: str = Field(
-        "sqlite", description="Database type (sqlite, postgresql, mysql, etc.)"
-    )
     table_definitions: List[TableDefinition] = Field(
         ..., description="Database schema information"
     )
-    custom_instructions: Optional[str] = Field(
-        None, description="Additional instructions for SQL generation"
+    needs_visualization: bool = Field(
+        False, description="Whether visualization is needed for this query"
     )
 
 
-class NLToSQLAgentOutputSchema(BaseIOSchema):
-    """Output schema for the NL-to-SQL agent."""
+class SQLAgentOutput(BaseIOSchema):
+    """Simplified output schema for SQL generation."""
 
-    sql_query: str = Field(..., description="The generated SQL query")
+    sql_query: str = Field(..., description="Generated SQL query")
     explanation: str = Field(
-        ..., description="Plain language explanation of what the SQL query does"
-    )
-    confidence_score: float = Field(
-        ..., description="Confidence score of the conversion (0-1)"
-    )
-    warnings: Optional[List[str]] = Field(
-        None, description="Potential issues or assumptions made"
+        ..., description="Brief explanation of what the query does"
     )
 
 
-def create_nl_to_sql_agent(
+def create_sql_agent(
     client: instructor.client,
     model: str = "gpt-4o-mini",
     memory: Optional[AgentMemory] = None,
 ):
-    """
-    Creates a specialized agent for converting natural language to SQL.
-    """
-    # Create system prompt for the agent
-    system_prompt = SystemPromptGenerator(
-        background=[
-            "You are an expert SQL developer who specializes in converting natural language to SQL.",
-            "Your task is to take a natural language query and convert it into a valid SQL query.",
-            "You have access to the database schema to ensure your SQL is correct and optimized.",
-            "If custom instructions are provided, you must follow them while generating SQL.",
-        ],
-        steps=[
-            "1. Check for any custom instructions that need to be followed",
-            "2. Analyze the natural language query to understand the intent",
-            "3. Identify relevant tables and columns from the provided schema",
-            "4. Add additional columns to the query if they provide relevent additional information",
-            "5. Structure a syntactically correct SQL query using proper joins and conditions",
-            "6. Verify that the SQL query accurately captures the intent of the natural language query",
-            "7. Ensure the query follows any provided custom instructions",
-            "8. Add comments to explain complex parts of the query",
-        ],
-        output_instructions=[
-            "Return a valid SQL query that matches the database schema",
-            "Provide a plain language explanation of what the query does",
-            "Include a confidence score from 0-1 on how well the conversion matches the intent",
-            "List any assumptions or potential issues with the conversion as warnings",
-        ],
-    )
+    """Creates a simplified agent for converting natural language to SQL."""
 
-    # Create and return the agent
     return BaseAgent(
         config=BaseAgentConfig(
             client=client,
             model=model,
             memory=memory,
-            system_prompt_generator=system_prompt,
-            input_schema=NLToSQLAgentInputSchema,
-            output_schema=NLToSQLAgentOutputSchema,
-            model_api_parameters={
-                "temperature": 0.1
-            },  # Lower temperature for more deterministic SQL generation
+            system_prompt_generator=SystemPromptGenerator(
+                background=[
+                    "You convert natural language queries about Strava activities into SQL.",
+                    "You have access to the database schema to create accurate queries.",
+                ],
+                steps=[
+                    "Analyze the natural language query",
+                    "Identify relevant tables and columns from the schema",
+                    "Transform units directly in SQL:",
+                    "  - Convert distance from meters to kilometers: 'distance / 1000 AS distance_km'",
+                    "  - Convert time from seconds to minutes: 'moving_time / 60 AS moving_time_minutes'",
+                    "  - Convert elapsed time from seconds to minutes: 'elapsed_time / 60 AS elapsed_time_minutes'",
+                    "  - Calculate pace in minutes per mile when both distance and moving_time are available: '(moving_time / 60) / (distance / 1609.34) AS pace_min_mi'",
+                    "Create a SQL query that correctly answers the question",
+                    "Include relevant additional columns that might be helpful",
+                    "For specific distance queries add a +/- 2% margin of error to query",
+                ],
+                output_instructions=[
+                    "Return a valid SQL query against the Strava database",
+                    "Always apply unit conversions in your SQL (km, minutes, pace)",
+                    "When including distance and moving_time, also calculate pace_min_km",
+                    "Use clear column aliases that indicate the unit (e.g., distance_km, moving_time_minutes)",
+                    "Provide a brief explanation of what the query does",
+                    "Add comments to explain any complex parts of the query",
+                ],
+            ),
+            input_schema=SQLAgentInput,
+            output_schema=SQLAgentOutput,
+            model_api_parameters={"temperature": 0.1},
         )
     )
