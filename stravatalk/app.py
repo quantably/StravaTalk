@@ -2,25 +2,49 @@
 Streamlit interface for StravaTalk.
 """
 
+import logging
 import streamlit as st
 from dotenv import load_dotenv
 import pandas as pd
 import traceback
 
-from atomic_agents.lib.components.agent_memory import AgentMemory
-from .orchestrator import initialize_agents, process_query
-from .visualization import create_visualization, display_visualization, validate_chart_inputs
-from .agents.classify_agent import QueryType
-from .utils.db_utils import get_user_from_token, get_user_activity_count
-from .utils.debug_utils import (
-    setup_debug_mode, 
-    show_debug_header, 
-    show_data_debug, 
-    show_chart_debug, 
-    show_error_debug,
-    debug_visualization,
-    is_debug_mode
-)
+# Set up logging for the main app
+logger = logging.getLogger(__name__)
+logger.info("🎯 Loading Streamlit app.py - starting imports...")
+
+try:
+    from atomic_agents.lib.components.agent_memory import AgentMemory
+    logger.info("✅ Imported AgentMemory")
+    
+    from .orchestrator import initialize_agents, process_query
+    logger.info("✅ Imported orchestrator")
+    
+    from .visualization import create_visualization, display_visualization, validate_chart_inputs
+    logger.info("✅ Imported visualization")
+    
+    from .agents.classify_agent import QueryType
+    logger.info("✅ Imported classify_agent")
+    
+    from .utils.db_utils import get_user_from_token, get_user_activity_count
+    logger.info("✅ Imported db_utils")
+    
+    from .utils.debug_utils import (
+        setup_debug_mode, 
+        show_debug_header, 
+        show_data_debug, 
+        show_chart_debug, 
+        show_error_debug,
+        debug_visualization,
+        is_debug_mode
+    )
+    logger.info("✅ Imported debug_utils")
+    logger.info("🎉 All imports successful in app.py")
+    
+except Exception as e:
+    logger.error(f"❌ Import failed in app.py: {e}")
+    logger.error(traceback.format_exc())
+    st.error(f"Failed to load application: {e}")
+    st.stop()
 
 
 def create_interface():
