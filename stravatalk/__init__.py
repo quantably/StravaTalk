@@ -1,0 +1,3 @@
+"""
+StravaTalk package initialization.
+"""

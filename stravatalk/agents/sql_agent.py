@@ -69,7 +69,9 @@ def create_sql_agent(
                     "For specific distance queries add a +/- 2% margin of error to query",
                 ],
                 output_instructions=[
-                    "Return a valid SQL query against the Strava database",
+                    "Return a valid PostgreSQL query against the Strava database",
+                    "Use PostgreSQL syntax and %s parameter placeholders (NOT ? placeholders)",
+                    "Do NOT include any WHERE clauses with athlete_id - this will be added automatically",
                     "Always apply unit conversions in your SQL (km, minutes, pace)",
                     "When including distance and moving_time, also calculate pace_min_km",
                     "Use clear column aliases that indicate the unit (e.g., distance_km, moving_time_minutes)",

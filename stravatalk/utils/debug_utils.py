@@ -12,8 +12,14 @@ def is_debug_mode():
 
 def setup_debug_mode():
     """Setup debug mode from URL parameters"""
-    query_params = st.query_params
-    debug_mode = query_params.get('debug') == 'true'
+    try:
+        # Try modern Streamlit API first
+        query_params = st.query_params
+    except AttributeError:
+        # Fallback for older Streamlit versions
+        query_params = st.experimental_get_query_params()
+    
+    debug_mode = query_params.get('debug', [False])[0] == 'true' if isinstance(query_params.get('debug', [False]), list) else query_params.get('debug') == 'true'
     st.session_state.debug_mode = debug_mode
     return debug_mode
 
@@ -24,7 +30,10 @@ def show_debug_header():
     
     st.sidebar.success("Debug mode is ON")
     st.sidebar.info("Debug information will be shown throughout the interface.")
-    query_params = st.query_params
+    try:
+        query_params = st.query_params
+    except AttributeError:
+        query_params = st.experimental_get_query_params()
     st.sidebar.write("Query parameters:", query_params)
 
 def show_data_debug(data, container=st):

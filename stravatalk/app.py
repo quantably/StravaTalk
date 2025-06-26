@@ -8,10 +8,11 @@ import pandas as pd
 import traceback
 
 from atomic_agents.lib.components.agent_memory import AgentMemory
-from orchestrator import initialize_agents, process_query
-from visualization import create_visualization, display_visualization, validate_chart_inputs
-from agents.classify_agent import QueryType
-from utils.debug_utils import (
+from .orchestrator import initialize_agents, process_query
+from .visualization import create_visualization, display_visualization, validate_chart_inputs
+from .agents.classify_agent import QueryType
+from .utils.db_utils import get_user_from_token, get_user_activity_count
+from .utils.debug_utils import (
     setup_debug_mode, 
     show_debug_header, 
     show_data_debug, 
@@ -38,6 +39,22 @@ def create_interface():
         st.title("StravaTalk 🏃‍♂️")
         
     load_dotenv()
+    
+    # Check for user authentication
+    current_user = get_user_from_token()
+    if not current_user:
+        st.warning("⚠️ No authenticated user found. Please complete OAuth flow first.")
+        st.info("Run the OAuth server to authenticate with Strava and authorize access to your data.")
+        st.stop()
+    
+    # Display user info
+    activity_count = get_user_activity_count(current_user)
+    st.sidebar.success(f"👤 User: {current_user}")
+    st.sidebar.info(f"📊 Activities: {activity_count}")
+    
+    # Store current user in session state
+    if "current_user" not in st.session_state:
+        st.session_state.current_user = current_user
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [
@@ -117,7 +134,7 @@ def handle_query(user_query):
 
         with st.status("Processing your query...", expanded=False) as status:
             result = process_query(
-                classify_agent, sql_agent, response_agent, user_query
+                classify_agent, sql_agent, response_agent, user_query, st.session_state.current_user
             )
 
             classification = result["classification"]

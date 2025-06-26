@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StravaTalk - Connect Your Strava Account</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .strava-logo {
+            width: 200px;
+            height: auto;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #fc4c02;
+            margin-bottom: 20px;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .connect-btn {
+            background: #fc4c02;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.2s;
+        }
+        .connect-btn:hover {
+            background: #e63900;
+        }
+        .permissions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .permissions h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .permissions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .permissions li {
+            margin-bottom: 8px;
+            color: #666;
+        }
+        .scope-selection {
+            margin: 30px 0;
+        }
+        .scope-selection h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .scope-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .scope-btn {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .scope-btn:hover {
+            border-color: #fc4c02;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(252, 76, 2, 0.1);
+        }
+        .scope-btn strong {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .scope-btn p {
+            margin: 8px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .scope-btn small {
+            color: #999;
+            font-style: italic;
+        }
+        .scope-public {
+            border-color: #28a745;
+        }
+        .scope-public:hover {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .scope-private {
+            border-color: #ffc107;
+        }
+        .scope-private:hover {
+            border-color: #ffc107;
+            background: #fffdf5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏃‍♂️ Connect StravaTalk to Your Strava Account</h1>
+        
+        <div class="description">
+            <p>StravaTalk needs access to your Strava account to provide intelligent analysis of your activities using natural language queries.</p>
+            <p>Click the button below to securely connect your account through Strava's official OAuth system.</p>
+        </div>
+
+        <div class="scope-selection">
+            <h3>🔐 Choose Your Privacy Level</h3>
+            <div class="scope-options">
+                <a href="/oauth/authorize?scope=read" class="scope-btn scope-public">
+                    <strong>📊 Public Activities Only</strong>
+                    <p>Access only activities visible to everyone</p>
+                    <small>Recommended for most users</small>
+                </a>
+                
+                <a href="/oauth/authorize?scope=read_all" class="scope-btn scope-private">
+                    <strong>🔒 Public + Private Activities</strong>
+                    <p>Access all your activities including private ones</p>
+                    <small>For complete activity analysis</small>
+                </a>
+            </div>
+        </div>
+
+        <div class="permissions">
+            <h3>🔒 Privacy & Security</h3>
+            <ul>
+                <li>✅ <strong>Secure OAuth:</strong> Uses Strava's official authentication system</li>
+                <li>✅ <strong>Local storage:</strong> Your tokens are stored securely in your own database</li>
+                <li>✅ <strong>No data sharing:</strong> Your activity data never leaves your system</li>
+                <li>✅ <strong>Revocable access:</strong> You can disconnect anytime from your Strava settings</li>
+            </ul>
+            <p><em>Choose the minimum access level you need. You can always reconnect with different permissions later.</em></p>
+        </div>
+    </div>
+</body>
+</html>

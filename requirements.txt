@@ -1,0 +1,13 @@
+streamlit
+openai
+instructor
+pandas
+atomic-agents
+fastapi
+uvicorn
+psycopg2-binary
+python-dotenv
+pytest
+pytest-asyncio
+requests
+jinja2

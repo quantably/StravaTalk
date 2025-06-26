@@ -1,0 +1,35 @@
+# Dockerfile for StravaTalk FastAPI Services (OAuth + Webhook)
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY stravatalk/ ./stravatalk/
+COPY templates/ ./templates/
+COPY .env.example ./.env.example
+
+# Create a non-root user for security
+RUN useradd -m -u 1000 fastapi && chown -R fastapi:fastapi /app
+USER fastapi
+
+# Expose port (Render will set PORT environment variable)
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Run the combined FastAPI application
+# Render will automatically set the PORT environment variable
+CMD python -m uvicorn stravatalk.main:app --host 0.0.0.0 --port ${PORT:-8000}

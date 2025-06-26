@@ -7,14 +7,14 @@ import pandas as pd
 import openai
 import instructor
 
-from agents.classify_agent import (
+from .agents.classify_agent import (
     create_classification_agent,
     QueryClassifyInput,
     QueryType,
 )
-from agents.response_agent import create_response_agent, ResponseAgentInput, SQLResult
-from agents.sql_agent import create_sql_agent, SQLAgentInput
-from utils.db_utils import get_table_definitions, execute_sql_query
+from .agents.response_agent import create_response_agent, ResponseAgentInput, SQLResult
+from .agents.sql_agent import create_sql_agent, SQLAgentInput
+from .utils.db_utils import get_table_definitions, execute_sql_query
 
 
 def initialize_agents(shared_memory=None):
@@ -32,8 +32,8 @@ def initialize_agents(shared_memory=None):
     return classify_agent, sql_agent, response_agent
 
 
-def process_query(classify_agent, sql_agent, response_agent, query):
-    """Process a user query through the agent pipeline."""
+def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=None):
+    """Process a user query through the agent pipeline with optional user filtering."""
 
     # Step 1: Classify the query
     classification = classify_agent.run(QueryClassifyInput(query=query))
@@ -55,7 +55,7 @@ def process_query(classify_agent, sql_agent, response_agent, query):
 
     # Step 2: Generate SQL if appropriate
     needs_viz = classification.query_type == QueryType.VIZ
-    tables = get_table_definitions(os.getenv("STRAVA_DB_PATH"))
+    tables = get_table_definitions()
 
     sql_input = SQLAgentInput(
         query=query, table_definitions=tables, needs_visualization=needs_viz
@@ -67,9 +67,18 @@ def process_query(classify_agent, sql_agent, response_agent, query):
     # Store SQL query in result
     result["sql_query"] = sql_query
 
-    # Step 3: Execute SQL query
-    execution_result = execute_sql_query(os.getenv("STRAVA_DB_PATH"), sql_query)
+    # Debug: Print the generated SQL query
+    print(f"🔍 Generated SQL Query: {sql_query}")
+    print(f"🔍 User filtering with athlete_id: {athlete_id}")
+
+    # Step 3: Execute SQL query with user filtering
+    execution_result = execute_sql_query(sql_query, athlete_id=athlete_id)
     execution_result["sql_query"] = sql_query
+    
+    # Debug: Print execution result
+    print(f"🔍 Query execution success: {execution_result.get('success')}")
+    if not execution_result.get('success'):
+        print(f"🔍 Query error: {execution_result.get('error_message')}")
 
     # Handle SQL execution failure
     if not execution_result["success"]:

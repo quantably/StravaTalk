@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StravaTalk - Successfully Connected!</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .success-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .athlete-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .athlete-info h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .label {
+            font-weight: 600;
+            color: #555;
+        }
+        .value {
+            color: #333;
+        }
+        .next-steps {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .next-steps h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .next-steps ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .next-steps li {
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .btn-group {
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #fc4c02;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #e63900;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✅</div>
+        <h1>Successfully Connected!</h1>
+        
+        <p>Your Strava account has been successfully connected to StravaTalk. You can now use natural language to query your activity data!</p>
+
+        <div class="athlete-info">
+            <h3>🏃‍♂️ Connected Account</h3>
+            <div class="info-row">
+                <span class="label">Athlete:</span>
+                <span class="value">{{ athlete.firstname }} {{ athlete.lastname }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Athlete ID:</span>
+                <span class="value">{{ athlete.id }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Location:</span>
+                <span class="value">{{ athlete.city }}{% if athlete.state %}, {{ athlete.state }}{% endif %}{% if athlete.country %}, {{ athlete.country }}{% endif %}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Permissions:</span>
+                <span class="value">{{ scope }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Token ID:</span>
+                <span class="value">{{ token_id }}</span>
+            </div>
+        </div>
+
+        <div class="next-steps">
+            <h3>🚀 What's Next?</h3>
+            <ul>
+                <li>Your activities will now be automatically synced via webhooks</li>
+                <li>You can start the StravaTalk Streamlit app to query your data</li>
+                <li>Try asking questions like "What was my longest run last month?"</li>
+                <li>Create or update activities in Strava to see real-time sync in action</li>
+            </ul>
+        </div>
+
+        <div class="btn-group">
+            <a href="http://localhost:8501" class="btn btn-primary" target="_blank">🎯 Open StravaTalk App</a>
+            <a href="/tokens" class="btn btn-secondary">📊 View All Tokens</a>
+        </div>
+    </div>
+</body>
+</html>
