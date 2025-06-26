@@ -5,9 +5,27 @@ Entry point for Streamlit application that sets up the proper module path.
 
 import sys
 import os
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+logger.info("🚀 Starting StravaTalk Streamlit application...")
 
 # Add the current directory to Python path so stravatalk package can be imported
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+logger.info(f"✅ Added to Python path: {os.path.dirname(os.path.abspath(__file__))}")
 
-# Now import and run the actual Streamlit app
-from stravatalk.app import *
+try:
+    logger.info("📦 Importing stravatalk.app module...")
+    # Import the app module but don't use import *
+    import stravatalk.app
+    logger.info("✅ Successfully imported stravatalk.app")
+except Exception as e:
+    logger.error(f"❌ Failed to import stravatalk.app: {e}")
+    import traceback
+    logger.error(traceback.format_exc())
+    raise
+
+logger.info("🎉 StravaTalk app entry point completed!")
