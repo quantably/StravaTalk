@@ -19,11 +19,17 @@ logger.info(f"✅ Added to Python path: {os.path.dirname(os.path.abspath(__file_
 
 try:
     logger.info("📦 Importing stravatalk.app module...")
-    # Import the app module but don't use import *
+    # Import the app module
     import stravatalk.app
     logger.info("✅ Successfully imported stravatalk.app")
+    
+    # Actually run the Streamlit app
+    logger.info("🚀 Calling main() to start Streamlit interface...")
+    stravatalk.app.main()
+    logger.info("✅ Streamlit app main() completed")
+    
 except Exception as e:
-    logger.error(f"❌ Failed to import stravatalk.app: {e}")
+    logger.error(f"❌ Failed to run stravatalk.app: {e}")
     import traceback
     logger.error(traceback.format_exc())
     raise
