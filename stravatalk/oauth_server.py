@@ -14,6 +14,7 @@ templates = Jinja2Templates(directory="templates")
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 REDIRECT_URI = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:8001/oauth/callback")
+STREAMLIT_URL = os.getenv("STREAMLIT_URL", "http://localhost:8501")
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -84,7 +85,8 @@ async def oauth_callback(request: Request, code: str = None, error: str = None):
             "athlete": token_data["athlete"],
             "scope": token_data.get("scope", "read"),
             "token_id": stored_token_id,
-            "webhook_status": webhook_status
+            "webhook_status": webhook_status,
+            "streamlit_url": STREAMLIT_URL
         })
         
     except Exception as e:
