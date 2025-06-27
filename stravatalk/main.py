@@ -3,7 +3,7 @@ Main FastAPI application combining OAuth and Webhook services.
 This serves as the entry point for production deployment.
 """
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 import os
@@ -45,8 +45,30 @@ async def verify_webhook(request: Request):
 async def handle_webhook(request: Request):
     return await webhook_handler.handle_webhook_event(request)
 
-# Mount authentication routes
-app.mount("/auth", auth_server.app)
+# Include authentication routes directly
+@app.post("/auth/send-magic-link")
+async def send_magic_link(request_data: auth_server.MagicLinkRequest):
+    return await auth_server.send_magic_link(request_data)
+
+@app.get("/auth/verify-magic-link")
+async def verify_magic_link(token: str = Query(...)):
+    return await auth_server.verify_magic_link(token)
+
+@app.post("/auth/logout")
+async def logout(session_token: str):
+    return await auth_server.logout(session_token)
+
+@app.get("/auth/session-info")
+async def get_session_info(session_token: str = Query(...)):
+    return await auth_server.get_session_info(session_token)
+
+@app.post("/auth/cleanup")
+async def cleanup_tokens():
+    return await auth_server.cleanup_tokens()
+
+@app.get("/auth/health")
+async def auth_health_check():
+    return await auth_server.health_check()
 
 # Add health check endpoint
 @app.get("/health")
