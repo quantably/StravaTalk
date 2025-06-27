@@ -203,9 +203,14 @@ def handle_query(user_query):
         classify_agent, sql_agent, response_agent = st.session_state.agents
 
         with st.status("Processing your query...", expanded=False) as status:
+            logger.info(f"🚀 Processing query: {user_query}")
+            logger.info(f"👤 Current user: {st.session_state.current_user}")
+            
             result = process_query(
                 classify_agent, sql_agent, response_agent, user_query, st.session_state.current_user
             )
+            
+            logger.info(f"✅ Query processing completed")
 
             classification = result["classification"]
             status.write(f"Query type: {classification.query_type}")
@@ -290,6 +295,12 @@ def handle_query(user_query):
                         show_error_debug(e, data, assistant_message["chart_info"], st)
 
     except Exception as e:
+        # Log the full error details
+        logger.error(f"💥 Error in handle_query: {str(e)}")
+        logger.error(f"📋 Full traceback: {traceback.format_exc()}")
+        logger.error(f"🔍 Error type: {type(e).__name__}")
+        logger.error(f"📝 User query: {user_query}")
+        
         error_message = f"Error: {str(e)}"
         st.session_state.chat_history.append(
             {"role": "assistant", "text": error_message}
@@ -297,6 +308,17 @@ def handle_query(user_query):
 
         with st.chat_message("assistant"):
             st.error(error_message)
+            
+            # Always show the full traceback in an expander for debugging
+            with st.expander("🔧 Debug - Full Error Details"):
+                st.code(f"""
+Error Type: {type(e).__name__}
+Error Message: {str(e)}
+User Query: {user_query}
+
+Full Traceback:
+{traceback.format_exc()}
+                """)
 
         if is_debug_mode():
             st.error(traceback.format_exc())
