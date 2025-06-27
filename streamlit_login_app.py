@@ -56,7 +56,7 @@ def main():
 
 def is_authenticated():
     """Check if user is authenticated."""
-    # Check for session token in URL parameters first
+    # Check for session token in URL parameters first (for initial login)
     query_params = st.query_params
     
     if "session_token" in query_params:
@@ -66,22 +66,68 @@ def is_authenticated():
             # Store in session state
             st.session_state.session_token = session_token
             st.session_state.authenticated = True
-            # DON'T clear URL params - keep session_token in URL for persistence
+            
+            # Store in secure cookie and clear URL for security
+            set_session_cookie(session_token)
+            st.query_params.clear()
+            st.rerun()
             return True
     
     # Check if we have a valid session in session state
     if st.session_state.get("authenticated", False):
-        session_token = st.session_state.get("session_token")
-        if session_token:
-            # Re-validate session token to make sure it's still valid
-            if validate_session_token(session_token):
-                return True
-            else:
-                # Session expired, clear state
-                st.session_state.clear()
-                return False
+        return True
+    
+    # Try to get session from cookie
+    session_token = get_session_cookie()
+    if session_token:
+        # Validate session token
+        if validate_session_token(session_token):
+            st.session_state.session_token = session_token
+            st.session_state.authenticated = True
+            return True
+        else:
+            # Session expired, clear cookie
+            clear_session_cookie()
+            st.session_state.clear()
     
     return False
+
+def set_session_cookie(session_token):
+    """Set session token in secure cookie."""
+    st.markdown(f"""
+    <script>
+        document.cookie = "strava_session={session_token}; path=/; secure; samesite=strict; max-age=604800";
+    </script>
+    """, unsafe_allow_html=True)
+
+def get_session_cookie():
+    """Get session token from cookie."""
+    cookie_script = """
+    <script>
+        function getCookie(name) {
+            const value = "; " + document.cookie;
+            const parts = value.split("; " + name + "=");
+            if (parts.length === 2) {
+                const token = parts.pop().split(";").shift();
+                // Send token via URL parameter for Streamlit to access
+                if (token && !window.location.search.includes('session_token')) {
+                    window.location.href = window.location.pathname + '?session_token=' + token;
+                }
+            }
+        }
+        getCookie('strava_session');
+    </script>
+    """
+    st.markdown(cookie_script, unsafe_allow_html=True)
+    return None  # Streamlit can't directly access cookies, so we redirect with token
+
+def clear_session_cookie():
+    """Clear session cookie."""
+    st.markdown("""
+    <script>
+        document.cookie = "strava_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    </script>
+    """, unsafe_allow_html=True)
 
 def validate_session_token(session_token: str) -> bool:
     """Validate session token with FastAPI backend."""

@@ -119,6 +119,13 @@ User Email: {user_email}
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         
+        # Clear session cookie
+        st.markdown("""
+        <script>
+            document.cookie = "strava_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        </script>
+        """, unsafe_allow_html=True)
+        
         # Clear all URL parameters and redirect to login
         st.query_params.clear()
         st.query_params["login"] = "true"
