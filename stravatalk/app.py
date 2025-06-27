@@ -91,7 +91,7 @@ def create_interface():
         
         session_token = st.session_state.get("session_token")
         if session_token:
-            oauth_url = f"https://stravatalk-api2.onrender.com/oauth/authorize?session_token={session_token}"
+            oauth_url = f"https://stravatalk-api2.onrender.com/oauth/authorize?scope=read_all&session_token={session_token}"
             st.markdown(f"[🔗 Connect Strava Account]({oauth_url})")
             
             # Debug info

@@ -52,11 +52,11 @@ async def initiate_oauth(scope: str = "read", session_token: str = None):
     
     # Validate scope parameter
     valid_scopes = {
-        "read": "read",  # Public activities only
-        "read_all": "read,activity:read_all"  # Public + private activities
+        "read": "read",  # Profile info only
+        "read_all": "read,activity:read_all"  # Profile + all activities (public + private)
     }
     
-    scopes = valid_scopes.get(scope, "read")
+    scopes = valid_scopes.get(scope, "read_all")  # Default to read_all for activities
     
     # Include session token in state parameter for callback
     state = f"session_token={session_token}"
