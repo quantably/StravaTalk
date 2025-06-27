@@ -5,6 +5,7 @@ import os
 import requests
 from dotenv import load_dotenv
 from .utils.db_utils import get_db_connection
+from .utils.auth_utils import store_strava_connection
 
 load_dotenv()
 
