@@ -13,3 +13,4 @@ requests
 jinja2
 pyjwt
 resend
+email-validator
