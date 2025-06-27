@@ -13,6 +13,7 @@ load_dotenv()
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@yourdomain.com")
 STREAMLIT_URL = os.getenv("STREAMLIT_URL", "http://localhost:8501")
+FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
 
 def initialize_resend():
     """Initialize Resend with API key."""
@@ -36,11 +37,12 @@ def send_magic_link_email(email: str, magic_token: str) -> bool:
     
     if not initialize_resend():
         print(f"📧 Email service not available - simulating success")
-        print(f"🔗 Magic link URL would be: {STREAMLIT_URL}?session_token=SIMULATED_TOKEN")
-        print(f"🎯 Token: {magic_token[:20]}...")
+        print(f"🔗 Magic link URL would be: {FASTAPI_URL}/auth/verify-magic-link?token={magic_token[:20]}...")
         return True  # Return True for development
     
-    magic_link = f"{STREAMLIT_URL}/login?token={magic_token}"
+    # The magic link should go to the FastAPI verification endpoint
+    # which will then redirect to Streamlit with a session token
+    magic_link = f"{FASTAPI_URL}/auth/verify-magic-link?token={magic_token}"
     
     html_content = f"""
     <!DOCTYPE html>
