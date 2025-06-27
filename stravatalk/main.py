@@ -29,12 +29,12 @@ async def oauth_home(request: Request):
     return await oauth_server.home(request)
 
 @app.get("/oauth/authorize") 
-async def oauth_authorize(scope: str = "read"):
-    return await oauth_server.initiate_oauth(scope)
+async def oauth_authorize(scope: str = "read", session_token: str = None):
+    return await oauth_server.initiate_oauth(scope, session_token)
 
 @app.get("/oauth/callback")
-async def oauth_callback(request: Request, code: str = None, error: str = None):
-    return await oauth_server.oauth_callback(request, code, error)
+async def oauth_callback(request: Request, code: str = None, error: str = None, state: str = None):
+    return await oauth_server.oauth_callback(request, code, error, state)
 
 # Include webhook routes
 @app.get("/webhook")
