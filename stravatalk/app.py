@@ -118,6 +118,14 @@ User Email: {user_email}
         # Clear session state
         for key in list(st.session_state.keys()):
             del st.session_state[key]
+        
+        # Clear localStorage
+        st.markdown("""
+        <script>
+            localStorage.removeItem('strava_session_token');
+        </script>
+        """, unsafe_allow_html=True)
+        
         st.query_params["login"] = "true"
         st.rerun()
     

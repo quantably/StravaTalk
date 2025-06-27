@@ -56,22 +56,61 @@ def main():
 
 def is_authenticated():
     """Check if user is authenticated."""
-    # Check for session token in URL parameters
+    # Check for session token in URL parameters first
     query_params = st.query_params
     
     if "session_token" in query_params:
         session_token = query_params["session_token"]
         # Validate session with backend
         if validate_session_token(session_token):
-            # Store in session state
+            # Store in session state and localStorage
             st.session_state.session_token = session_token
             st.session_state.authenticated = True
+            
+            # Store in localStorage for persistence across page refreshes
+            st.markdown(f"""
+            <script>
+                localStorage.setItem('strava_session_token', '{session_token}');
+            </script>
+            """, unsafe_allow_html=True)
+            
             # Clear URL params for security
             st.query_params.clear()
             return True
     
-    # Check session state
-    return st.session_state.get("authenticated", False)
+    # Check session state first
+    if st.session_state.get("authenticated", False):
+        return True
+    
+    # Check localStorage for persisted session
+    session_token = st.session_state.get("session_token")
+    if not session_token:
+        # Try to get from localStorage via JavaScript
+        session_check_html = """
+        <script>
+            const token = localStorage.getItem('strava_session_token');
+            if (token) {
+                // Redirect with token to validate
+                window.location.href = window.location.pathname + '?session_token=' + token;
+            }
+        </script>
+        """
+        st.markdown(session_check_html, unsafe_allow_html=True)
+        return False
+    
+    # Validate existing session token
+    if validate_session_token(session_token):
+        st.session_state.authenticated = True
+        return True
+    else:
+        # Session expired, clear localStorage
+        st.markdown("""
+        <script>
+            localStorage.removeItem('strava_session_token');
+        </script>
+        """, unsafe_allow_html=True)
+        st.session_state.clear()
+        return False
 
 def validate_session_token(session_token: str) -> bool:
     """Validate session token with FastAPI backend."""
