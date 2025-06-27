@@ -134,7 +134,8 @@ User Email: {user_email}
         ]
 
     if "shared_memory" not in st.session_state:
-        st.session_state.shared_memory = AgentMemory()
+        # Create AgentMemory without persistence to avoid serialization issues
+        st.session_state.shared_memory = AgentMemory(max_messages=0)
 
     if "agents" not in st.session_state:
         st.session_state.agents = initialize_agents(st.session_state.shared_memory)
