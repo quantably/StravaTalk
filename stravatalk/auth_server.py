@@ -169,7 +169,8 @@ async def health_check():
     """Health check for the auth service."""
     return {
         "status": "healthy",
-        "service": "StravaTalk Auth Server"
+        "service": "StravaTalk Auth Server",
+        "version": "1.1.0"
     }
 
 # Error handlers
