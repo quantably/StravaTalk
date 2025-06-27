@@ -16,6 +16,7 @@ class TableDefinition(BaseIOSchema):
 
     name: str = Field(..., description="Name of the table")
     columns: List[Dict[str, Any]] = Field(..., description="Columns in the table")
+    description: str = Field(..., description="Description of the table")
 
 
 class SQLAgentInput(BaseIOSchema):
