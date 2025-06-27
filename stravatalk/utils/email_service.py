@@ -16,18 +16,28 @@ STREAMLIT_URL = os.getenv("STREAMLIT_URL", "http://localhost:8501")
 
 def initialize_resend():
     """Initialize Resend with API key."""
+    print(f"🔧 Initializing Resend...")
+    print(f"🔑 RESEND_API_KEY present: {bool(RESEND_API_KEY)}")
+    print(f"📧 FROM_EMAIL: {FROM_EMAIL}")
+    print(f"🌐 STREAMLIT_URL: {STREAMLIT_URL}")
+    
     if not RESEND_API_KEY:
         print("⚠️ RESEND_API_KEY not set - email functionality will be disabled")
         return False
     
+    print(f"🔑 Setting Resend API key: {RESEND_API_KEY[:10]}...")
     resend.api_key = RESEND_API_KEY
+    print(f"✅ Resend initialized successfully")
     return True
 
 def send_magic_link_email(email: str, magic_token: str) -> bool:
     """Send a magic link email to the user."""
+    print(f"📧 send_magic_link_email called for: {email}")
+    
     if not initialize_resend():
-        print(f"📧 Would send magic link to {email} (email disabled in development)")
-        print(f"🔗 Magic link: {STREAMLIT_URL}/login?token={magic_token}")
+        print(f"📧 Email service not available - simulating success")
+        print(f"🔗 Magic link URL would be: {STREAMLIT_URL}?session_token=SIMULATED_TOKEN")
+        print(f"🎯 Token: {magic_token[:20]}...")
         return True  # Return True for development
     
     magic_link = f"{STREAMLIT_URL}/login?token={magic_token}"

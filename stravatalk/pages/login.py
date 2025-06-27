@@ -117,6 +117,14 @@ def show_login_page():
     
     # Additional info
     st.markdown("---")
+    
+    # Debug info (show in development)
+    with st.expander("🔧 Debug Info"):
+        st.code(f"""
+Environment Configuration:
+FASTAPI_URL: {FASTAPI_URL}
+        """)
+    
     st.markdown("""
     **🔒 Secure & Private**
     - No passwords to remember
@@ -133,14 +141,46 @@ def show_login_page():
 def send_magic_link(email: str) -> bool:
     """Send magic link to user's email."""
     try:
+        url = f"{FASTAPI_URL}/auth/send-magic-link"
+        payload = {"email": email}
+        
+        st.info(f"🔗 Sending request to: {url}")
+        st.info(f"📧 Email: {email}")
+        
         response = requests.post(
-            f"{FASTAPI_URL}/auth/send-magic-link",
-            json={"email": email},
+            url,
+            json=payload,
             timeout=10
         )
-        return response.status_code == 200
+        
+        st.info(f"📡 Response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            result = response.json()
+            st.success(f"✅ Server response: {result}")
+            return True
+        else:
+            error_detail = "Unknown error"
+            try:
+                error_data = response.json()
+                error_detail = error_data.get("detail", error_data)
+            except:
+                error_detail = response.text
+            
+            st.error(f"❌ Server error ({response.status_code}): {error_detail}")
+            return False
+            
+    except requests.exceptions.ConnectionError as e:
+        st.error(f"🌐 Connection error: Cannot reach {FASTAPI_URL}")
+        st.error(f"Details: {str(e)}")
+        return False
+    except requests.exceptions.Timeout as e:
+        st.error(f"⏰ Timeout error: Request took too long")
+        st.error(f"Details: {str(e)}")
+        return False
     except Exception as e:
-        print(f"Error sending magic link: {e}")
+        st.error(f"💥 Unexpected error: {str(e)}")
+        st.error(f"Error type: {type(e).__name__}")
         return False
 
 def validate_session(session_token: str) -> bool:

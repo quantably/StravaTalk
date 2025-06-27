@@ -42,29 +42,47 @@ class SessionInfo(BaseModel):
 @app.post("/auth/send-magic-link")
 async def send_magic_link(request_data: MagicLinkRequest):
     """Generate and send a magic link to the user's email."""
+    import traceback
+    
     try:
         email = str(request_data.email).lower().strip()
+        print(f"🚀 Starting magic link process for email: {email}")
         
         # Generate magic token
+        print(f"🎯 Generating magic token...")
         magic_token = generate_magic_token(email)
+        print(f"✅ Magic token generated: {magic_token[:20]}...")
         
         # Store token in database
+        print(f"💾 Storing token in database...")
         if not store_magic_token(email, magic_token):
+            print(f"❌ Failed to store magic token in database")
             raise HTTPException(status_code=500, detail="Failed to store magic token")
+        print(f"✅ Token stored in database successfully")
         
         # Send email
-        if not send_magic_link_email(email, magic_token):
+        print(f"📧 Attempting to send email...")
+        email_result = send_magic_link_email(email, magic_token)
+        print(f"📧 Email send result: {email_result}")
+        
+        if not email_result:
+            print(f"❌ Failed to send email")
             raise HTTPException(status_code=500, detail="Failed to send email")
         
+        print(f"🎉 Magic link process completed successfully")
         return {
             "success": True,
             "message": f"Magic link sent to {email}",
             "expires_in_minutes": 10
         }
         
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
-        print(f"Error sending magic link: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send magic link")
+        print(f"💥 Unexpected error in send_magic_link: {e}")
+        print(f"📋 Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to send magic link: {str(e)}")
 
 @app.get("/auth/verify-magic-link")
 async def verify_magic_link(token: str = Query(...)):
