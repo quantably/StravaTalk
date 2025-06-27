@@ -22,7 +22,44 @@ logger.info(f"✅ Added to Python path: {os.path.dirname(os.path.abspath(__file_
 
 def main():
     """Main application entry point with authentication routing."""
-    # Check for URL parameters
+    # Check if we're in development mode (no email service)
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    
+    dev_mode = not os.getenv("RESEND_API_KEY")
+    
+    if dev_mode:
+        # Development mode - skip authentication
+        logger.info("🛠️ Development mode detected (no RESEND_API_KEY) - skipping authentication")
+        
+        # Set up minimal session state for development
+        if "authenticated" not in st.session_state:
+            st.session_state.authenticated = True
+            st.session_state.session_token = "dev-mode-token"
+            st.session_state.user_id = 1  # Default dev user
+            st.session_state.user_email = "dev@localhost"
+        
+        # Show main app directly
+        try:
+            logger.info("📦 Importing stravatalk.app module...")
+            import stravatalk.app
+            logger.info("✅ Successfully imported stravatalk.app")
+            
+            # Actually run the Streamlit app
+            logger.info("🚀 Calling main() to start Streamlit interface...")
+            stravatalk.app.main()
+            logger.info("✅ Streamlit app main() completed")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to run stravatalk.app: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            st.error("Failed to load main application")
+        
+        return
+    
+    # Production mode - full authentication flow
     query_params = st.query_params
     
     # Check if we're on the login route

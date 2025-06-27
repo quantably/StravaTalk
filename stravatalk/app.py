@@ -83,30 +83,61 @@ def create_interface():
         st.error("Session error. Please log in again.")
         st.stop()
     
-    # Check if user has Strava connected
-    strava_connection = get_user_strava_connection(user_id)
-    if not strava_connection:
-        st.warning("⚠️ No Strava account connected.")
-        st.info("Connect your Strava account to start analyzing your activities.")
+    # Check if we're in development mode
+    import os
+    dev_mode = not os.getenv("RESEND_API_KEY")
+    
+    if dev_mode:
+        # Development mode - use any existing token as current user
+        from .utils.db_utils import get_user_from_token
+        current_user = get_user_from_token()
         
-        session_token = st.session_state.get("session_token")
-        if session_token:
-            oauth_url = f"https://stravatalk-api2.onrender.com/oauth/authorize?scope=read_all&session_token={session_token}"
-            st.markdown(f"[🔗 Connect Strava Account]({oauth_url})")
+        if not current_user:
+            st.warning("⚠️ No Strava data found in development mode.")
+            st.info("Make sure you have some activity data in your database.")
             
-            # Debug info
-            with st.expander("🔧 Debug - OAuth Info"):
+            # Show available users/tokens for development
+            with st.expander("🛠️ Development Info"):
                 st.code(f"""
+Development Mode Active (no RESEND_API_KEY)
+Authentication bypassed
+User ID: {user_id}
+User Email: {user_email}
+
+To connect Strava data, you can:
+1. Set RESEND_API_KEY to enable full auth flow
+2. Or manually populate the database with activity data
+                """)
+            st.stop()
+        
+        st.sidebar.info(f"🛠️ Development Mode")
+        st.sidebar.success(f"👤 Dev User: {user_email}")
+        
+    else:
+        # Production mode - check Strava connection
+        strava_connection = get_user_strava_connection(user_id)
+        if not strava_connection:
+            st.warning("⚠️ No Strava account connected.")
+            st.info("Connect your Strava account to start analyzing your activities.")
+            
+            session_token = st.session_state.get("session_token")
+            if session_token:
+                oauth_url = f"https://stravatalk-api2.onrender.com/oauth/authorize?scope=read_all&session_token={session_token}"
+                st.markdown(f"[🔗 Connect Strava Account]({oauth_url})")
+                
+                # Debug info
+                with st.expander("🔧 Debug - OAuth Info"):
+                    st.code(f"""
 Session Token: {session_token[:30]}...
 OAuth URL: {oauth_url}
 User ID: {user_id}
 User Email: {user_email}
-                """)
-        else:
-            st.error("Session error. Please log in again.")
-        st.stop()
-    
-    current_user = strava_connection["athlete_id"]
+                    """)
+            else:
+                st.error("Session error. Please log in again.")
+            st.stop()
+        
+        current_user = strava_connection["athlete_id"]
     
     # Display user info
     activity_count = get_user_activity_count(current_user)
