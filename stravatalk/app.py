@@ -93,6 +93,15 @@ def create_interface():
         if session_token:
             oauth_url = f"https://stravatalk-api2.onrender.com/oauth/authorize?session_token={session_token}"
             st.markdown(f"[🔗 Connect Strava Account]({oauth_url})")
+            
+            # Debug info
+            with st.expander("🔧 Debug - OAuth Info"):
+                st.code(f"""
+Session Token: {session_token[:30]}...
+OAuth URL: {oauth_url}
+User ID: {user_id}
+User Email: {user_email}
+                """)
         else:
             st.error("Session error. Please log in again.")
         st.stop()

@@ -31,15 +31,23 @@ async def initiate_oauth(scope: str = "read", session_token: str = None):
     # Import here to avoid circular imports
     from .utils.auth_utils import validate_session_token
     
+    print(f"🔐 OAuth authorize called with scope: {scope}")
+    print(f"🎫 Session token provided: {bool(session_token)}")
+    if session_token:
+        print(f"🎫 Session token: {session_token[:20]}...")
+    
     # Check if user has valid session
     if not session_token:
-        # Redirect to login page
-        return RedirectResponse(url=f"{STREAMLIT_URL}/login?next=oauth")
+        print(f"❌ No session token provided - redirecting to login")
+        return RedirectResponse(url=f"{STREAMLIT_URL}?login=true")
     
+    print(f"🔍 Validating session token...")
     session_info = validate_session_token(session_token)
     if not session_info:
-        # Invalid session, redirect to login
-        return RedirectResponse(url=f"{STREAMLIT_URL}/login?next=oauth")
+        print(f"❌ Invalid session token - redirecting to login")
+        return RedirectResponse(url=f"{STREAMLIT_URL}?login=true")
+    
+    print(f"✅ Valid session for user: {session_info['email']}")
     
     # Validate scope parameter
     valid_scopes = {
