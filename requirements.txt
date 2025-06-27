@@ -11,3 +11,5 @@ pytest
 pytest-asyncio
 requests
 jinja2
+pyjwt
+resend

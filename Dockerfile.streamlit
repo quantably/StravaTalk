@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY stravatalk/ ./stravatalk/
 COPY streamlit_app.py ./streamlit_app.py
+COPY streamlit_login_app.py ./streamlit_login_app.py
 COPY .env.example ./.env.example
 
 # Create a non-root user for security
@@ -30,10 +31,12 @@ EXPOSE 8504
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8504}/_stcore/health || exit 1
 
-# Run Streamlit app via entry point script using $PORT
-CMD python -m streamlit run streamlit_app.py \
+# Run Streamlit app with authentication via new entry point script using $PORT
+CMD python -m streamlit run streamlit_login_app.py \
     --server.port=${PORT:-8504} \
     --server.address=0.0.0.0 \
     --server.headless=true \
     --server.runOnSave=false \
-    --browser.gatherUsageStats=false
+    --browser.gatherUsageStats=false \
+    --server.enableCORS=false \
+    --server.enableXsrfProtection=false

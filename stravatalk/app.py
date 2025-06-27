@@ -26,7 +26,8 @@ try:
     logger.info("✅ Imported classify_agent")
     
     from .utils.db_utils import get_user_from_token, get_user_activity_count
-    logger.info("✅ Imported db_utils")
+    from .utils.auth_utils import get_user_strava_connection
+    logger.info("✅ Imported db_utils and auth_utils")
     
     from .utils.debug_utils import (
         setup_debug_mode, 
@@ -65,16 +66,51 @@ def create_interface():
     load_dotenv()
     
     # Check for user authentication
-    current_user = get_user_from_token()
-    if not current_user:
-        st.warning("⚠️ No authenticated user found. Please complete OAuth flow first.")
-        st.info("Run the OAuth server to authenticate with Strava and authorize access to your data.")
+    if not st.session_state.get("authenticated", False):
+        st.warning("⚠️ No authenticated user found. Please log in first.")
+        st.info("You need to be logged in to access StravaTalk.")
+        
+        if st.button("🔐 Go to Login"):
+            st.query_params["login"] = "true"
+            st.rerun()
         st.stop()
+    
+    # Get user info from session
+    user_id = st.session_state.get("user_id")
+    user_email = st.session_state.get("user_email")
+    
+    if not user_id:
+        st.error("Session error. Please log in again.")
+        st.stop()
+    
+    # Check if user has Strava connected
+    strava_connection = get_user_strava_connection(user_id)
+    if not strava_connection:
+        st.warning("⚠️ No Strava account connected.")
+        st.info("Connect your Strava account to start analyzing your activities.")
+        
+        session_token = st.session_state.get("session_token")
+        if session_token:
+            oauth_url = f"https://stravatalk-api2.onrender.com/oauth/authorize?session_token={session_token}"
+            st.markdown(f"[🔗 Connect Strava Account]({oauth_url})")
+        else:
+            st.error("Session error. Please log in again.")
+        st.stop()
+    
+    current_user = strava_connection["athlete_id"]
     
     # Display user info
     activity_count = get_user_activity_count(current_user)
-    st.sidebar.success(f"👤 User: {current_user}")
+    st.sidebar.success(f"👤 {user_email}")
     st.sidebar.info(f"📊 Activities: {activity_count}")
+    
+    # Add logout button
+    if st.sidebar.button("🚪 Logout"):
+        # Clear session state
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.query_params["login"] = "true"
+        st.rerun()
     
     # Store current user in session state
     if "current_user" not in st.session_state:

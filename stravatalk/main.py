@@ -21,6 +21,7 @@ templates = Jinja2Templates(directory="../templates")
 # Import individual services from same package
 from . import oauth_server
 from . import webhook_handler
+from . import auth_server
 
 # Mount OAuth routes at root level (since OAuth expects specific paths)
 @app.get("/", response_class=HTMLResponse)
@@ -44,10 +45,13 @@ async def verify_webhook(request: Request):
 async def handle_webhook(request: Request):
     return await webhook_handler.handle_webhook_event(request)
 
+# Mount authentication routes
+app.mount("/auth", auth_server.app)
+
 # Add health check endpoint
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "services": ["oauth", "webhook"], "version": "1.0.0"}
+    return {"status": "healthy", "services": ["oauth", "webhook", "auth"], "version": "1.0.0"}
 
 if __name__ == "__main__":
     import uvicorn

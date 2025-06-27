@@ -26,8 +26,21 @@ async def home(request: Request):
     })
 
 @app.get("/oauth/authorize")
-async def initiate_oauth(scope: str = "read"):
+async def initiate_oauth(scope: str = "read", session_token: str = None):
     """Initiate OAuth flow by redirecting to Strava with user-selected scope."""
+    # Import here to avoid circular imports
+    from .utils.auth_utils import validate_session_token
+    
+    # Check if user has valid session
+    if not session_token:
+        # Redirect to login page
+        return RedirectResponse(url=f"{STREAMLIT_URL}/login?next=oauth")
+    
+    session_info = validate_session_token(session_token)
+    if not session_info:
+        # Invalid session, redirect to login
+        return RedirectResponse(url=f"{STREAMLIT_URL}/login?next=oauth")
+    
     # Validate scope parameter
     valid_scopes = {
         "read": "read",  # Public activities only
@@ -36,6 +49,9 @@ async def initiate_oauth(scope: str = "read"):
     
     scopes = valid_scopes.get(scope, "read")
     
+    # Include session token in state parameter for callback
+    state = f"session_token={session_token}"
+    
     auth_url = (
         f"https://www.strava.com/oauth/authorize"
         f"?client_id={CLIENT_ID}"
@@ -43,13 +59,17 @@ async def initiate_oauth(scope: str = "read"):
         f"&redirect_uri={REDIRECT_URI}"
         f"&approval_prompt=force"
         f"&scope={scopes}"
+        f"&state={state}"
     )
     
     return RedirectResponse(url=auth_url)
 
 @app.get("/oauth/callback")
-async def oauth_callback(request: Request, code: str = None, error: str = None):
+async def oauth_callback(request: Request, code: str = None, error: str = None, state: str = None):
     """Handle OAuth callback from Strava."""
+    # Import here to avoid circular imports
+    from .utils.auth_utils import validate_session_token
+    
     if error:
         return templates.TemplateResponse("oauth_error.html", {
             "request": request,
@@ -59,6 +79,25 @@ async def oauth_callback(request: Request, code: str = None, error: str = None):
     if not code:
         raise HTTPException(status_code=400, detail="No authorization code provided")
     
+    # Extract session token from state parameter
+    session_token = None
+    if state and state.startswith("session_token="):
+        session_token = state.split("session_token=")[1]
+    
+    if not session_token:
+        return templates.TemplateResponse("oauth_error.html", {
+            "request": request,
+            "error": "Missing session information. Please log in first."
+        })
+    
+    # Validate session
+    session_info = validate_session_token(session_token)
+    if not session_info:
+        return templates.TemplateResponse("oauth_error.html", {
+            "request": request,
+            "error": "Invalid or expired session. Please log in again."
+        })
+    
     try:
         # Exchange authorization code for access token
         token_data = exchange_code_for_token(code)
@@ -66,28 +105,27 @@ async def oauth_callback(request: Request, code: str = None, error: str = None):
         if not token_data:
             raise HTTPException(status_code=400, detail="Failed to exchange code for token")
         
-        # Store tokens in database
+        # Store Strava connection for this user
         athlete_id = token_data["athlete"]["id"]
-        stored_token_id = store_user_tokens(
+        success = store_strava_connection(
+            user_id=session_info["user_id"],
             athlete_id=athlete_id,
             access_token=token_data["access_token"],
             refresh_token=token_data["refresh_token"],
             expires_at=token_data["expires_at"],
-            scope=token_data.get("scope", "read")  # Default scope if missing
+            scope=token_data.get("scope", "read")
         )
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to store Strava connection")
         
         # Ensure webhook subscription exists (idempotent)
         webhook_status = ensure_webhook_subscription()
         print(f"Webhook subscription status: {webhook_status}")
         
-        return templates.TemplateResponse("oauth_success.html", {
-            "request": request,
-            "athlete": token_data["athlete"],
-            "scope": token_data.get("scope", "read"),
-            "token_id": stored_token_id,
-            "webhook_status": webhook_status,
-            "streamlit_url": STREAMLIT_URL
-        })
+        # Redirect back to Streamlit with session token
+        redirect_url = f"{STREAMLIT_URL}?session_token={session_token}&strava_connected=true"
+        return RedirectResponse(url=redirect_url, status_code=302)
         
     except Exception as e:
         print(f"OAuth callback error: {e}")
