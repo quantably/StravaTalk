@@ -40,6 +40,9 @@ ENV/
 .env.local
 .env.*.local
 
+# Local development database
+local_strava.db
+
 # Log files
 *.log
 
