@@ -114,41 +114,28 @@ async def handle_activity_create(activity_id, owner_id):
 async def handle_activity_update(activity_id, owner_id, updates):
     """Handle activity updates (name, type, privacy changes)"""
     from .utils.db_utils import get_db_connection
-    import sqlite3
-    import os
     
     if not updates:
         return
     
     conn = get_db_connection()
-    is_sqlite = conn is None
-    
-    if is_sqlite:
-        # Handle SQLite
-        db_path = os.getenv("STRAVA_DB_PATH")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        placeholder = "?"
-    else:
-        # Handle PostgreSQL
-        cursor = conn.cursor()
-        placeholder = "%s"
+    cursor = conn.cursor()
     
     # Build dynamic UPDATE query based on what changed
     update_fields = []
     update_values = []
     
     if "title" in updates:
-        update_fields.append(f"name = {placeholder}")
+        update_fields.append("name = %s")
         update_values.append(updates["title"])
     
     if "type" in updates:
-        update_fields.append(f"type = {placeholder}")
+        update_fields.append("type = %s")
         update_values.append(updates["type"])
     
     if update_fields:
         update_values.extend([activity_id, owner_id])  # For WHERE clause
-        query = f"UPDATE activities SET {', '.join(update_fields)} WHERE id = {placeholder} AND athlete_id = {placeholder}"
+        query = f"UPDATE activities SET {', '.join(update_fields)} WHERE id = %s AND athlete_id = %s"
         cursor.execute(query, update_values)
         conn.commit()
         print(f"Updated activity {activity_id} for athlete {owner_id}: {updates}")
@@ -161,9 +148,6 @@ async def handle_activity_delete(activity_id, owner_id):
     from .utils.db_utils import get_db_connection
     
     conn = get_db_connection()
-    if not conn:
-        print("Database connection failed")
-        return
         
     cursor = conn.cursor()
     cursor.execute("DELETE FROM activities WHERE id = %s AND athlete_id = %s", (activity_id, owner_id))

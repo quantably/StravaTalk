@@ -7,13 +7,9 @@ import pandas as pd
 import openai
 import instructor
 
-from .agents.classify_agent import (
-    create_classification_agent,
-    QueryClassifyInput,
-    QueryType,
-)
-from .agents.response_agent import create_response_agent, ResponseAgentInput, SQLResult
-from .agents.sql_agent import create_sql_agent, SQLAgentInput
+from .agents.classify_agent import create_classification_agent, QueryType
+from .agents.response_agent import create_response_agent, SQLResult
+from .agents.sql_agent import create_sql_agent
 from .utils.db_utils import get_table_definitions, execute_sql_query
 
 
@@ -32,11 +28,17 @@ def initialize_agents(shared_memory=None):
     return classify_agent, sql_agent, response_agent
 
 
-def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=None):
+def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=None, debug_container=None):
     """Process a user query through the agent pipeline with optional user filtering."""
+    from .utils.debug_utils import show_agent_debug, show_sql_debug, show_orchestrator_debug
 
     # Step 1: Classify the query
-    classification = classify_agent.run(QueryClassifyInput(query=query))
+    classification = classify_agent.run(query)
+
+    # Debug: Show classification step
+    if debug_container:
+        debug_input = {"query": query}
+        show_agent_debug("Classification Agent", debug_input, classification, debug_container)
 
     # Initialize result dictionary
     result = {
@@ -51,29 +53,52 @@ def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=N
     # Exit early if query isn't appropriate for SQL
     if classification.query_type in [QueryType.CLARIFY, QueryType.UNSUPPORTED]:
         result["response_text"] = classification.explanation
+        
+        # Debug: Show early exit case
+        if debug_container:
+            debug_container.info(f"Query classified as {classification.query_type} - no SQL generation needed")
+        
         return result
 
     # Step 2: Generate SQL if appropriate
-    needs_viz = classification.query_type == QueryType.VIZ
     tables = get_table_definitions()
 
-    sql_input = SQLAgentInput(
-        query=query, table_definitions=tables, needs_visualization=needs_viz
-    )
+    try:
+        sql_output = sql_agent.run(query, tables)
+        sql_query = sql_output.sql_query
+        
+        # Basic validation - just check we got a non-empty query
+        if not sql_query or len(sql_query.strip()) < 10:
+            raise ValueError(f"SQL agent returned invalid query: {sql_query}")
+        
+    except Exception as e:
+        logger.error(f"❌ SQL agent failed: {e}")
+        result["success"] = False
+        result["response_text"] = f"Sorry, there was an error generating the SQL query: {str(e)}"
+        return result
 
-    sql_output = sql_agent.run(sql_input)
-    sql_query = sql_output.sql_query
+    # Debug: Show SQL generation step
+    if debug_container:
+        debug_input = {"query": query, "table_definitions": tables}
+        show_agent_debug("SQL Agent", debug_input, sql_output, debug_container)
 
     # Store SQL query in result
     result["sql_query"] = sql_query
 
-    # Debug: Print the generated SQL query
-    print(f"🔍 Generated SQL Query: {sql_query}")
-    print(f"🔍 User filtering with athlete_id: {athlete_id}")
+    # Debug: Log the generated SQL query
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"🔍 Classification result: {classification.query_type}")
+    logger.info(f"🔍 Generated SQL Query: {sql_query}")
+    logger.info(f"🔍 User filtering with athlete_id: {athlete_id}")
 
     # Step 3: Execute SQL query with user filtering
     execution_result = execute_sql_query(sql_query, athlete_id=athlete_id)
     execution_result["sql_query"] = sql_query
+    
+    # Debug: Show SQL execution
+    if debug_container:
+        show_sql_debug(sql_query, execution_result, debug_container)
     
     # Debug: Print execution result
     print(f"🔍 Query execution success: {execution_result.get('success')}")
@@ -93,8 +118,13 @@ def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=N
             row_count=0,
             has_visualization=False,
         )
-        response_input = ResponseAgentInput(query=query, sql_result=sql_result)
-        response_output = response_agent.run(response_input)
+        response_output = response_agent.run(query, sql_result)
+        
+        # Debug: Show response generation for error case
+        if debug_container:
+            debug_input = {"query": query, "sql_result": sql_result}
+            show_agent_debug("Response Agent (Error)", debug_input, response_output, debug_container)
+        
         result["response_text"] = response_output.response
         return result
 
@@ -105,94 +135,7 @@ def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=N
         )
         result["data"] = df
 
-        # Step 4: Prepare visualization data if needed
-        if needs_viz and df is not None and not df.empty:
-            # Verify that the column exists in the result set
-            available_columns = df.columns.tolist()
-
-            # Use the classification agent's suggested columns, but check they exist
-            # First, try to use the transformed column version if requested a raw column
-            x_column = classification.x_column
-            # Try to find transformed version of the column if available
-            if x_column not in available_columns:
-                if x_column == "distance" and "distance_km" in available_columns:
-                    x_column = "distance_km"
-                elif (
-                    x_column == "moving_time"
-                    and "moving_time_minutes" in available_columns
-                ):
-                    x_column = "moving_time_minutes"
-                elif (
-                    x_column == "elapsed_time"
-                    and "elapsed_time_minutes" in available_columns
-                ):
-                    x_column = "elapsed_time_minutes"
-                else:
-                    x_column = available_columns[0]  # Fallback
-
-            y_columns = []
-            if classification.y_columns:
-                for y_col in classification.y_columns:
-                    # Try to find transformed version of the column if available
-                    if y_col not in available_columns:
-                        if y_col == "distance" and "distance_km" in available_columns:
-                            y_columns.append("distance_km")
-                        elif (
-                            y_col == "moving_time"
-                            and "moving_time_minutes" in available_columns
-                        ):
-                            y_columns.append("moving_time_minutes")
-                        elif (
-                            y_col == "elapsed_time"
-                            and "elapsed_time_minutes" in available_columns
-                        ):
-                            y_columns.append("elapsed_time_minutes")
-                        elif y_col == "pace" and "pace_min_mi" in available_columns:
-                            y_columns.append("pace_min_mi")
-                    else:
-                        y_columns.append(y_col)
-
-            # If no y_columns found, use a reasonable default
-            if not y_columns:
-                # Prioritize transformed columns
-                transformed_cols = [
-                    col
-                    for col in available_columns
-                    if "distance_km" in col
-                    or "time_minutes" in col
-                    or "pace_min_mi" in col
-                ]
-
-                if transformed_cols:
-                    y_columns = [transformed_cols[0]]
-                else:
-                    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-                    if numeric_cols:
-                        y_columns = [numeric_cols[0]]
-                    else:
-                        # If no numeric columns, use the second column if available
-                        y_columns = [
-                            available_columns[1]
-                            if len(available_columns) > 1
-                            else available_columns[0]
-                        ]
-
-            # For running activities, add pace if available
-            if (
-                "type" in df.columns
-                and "Run" in df["type"].values
-                and "pace_min_mi" in available_columns
-            ):
-                if "pace_min_mi" not in y_columns:
-                    y_columns.append("pace_min_mi")
-
-            result["chart_info"] = {
-                "x_column": x_column,
-                "y_columns": y_columns,
-                "chart_type": classification.chart_type or "line",
-            }
-
-    # Step 5: Generate text response
+    # Step 4: Generate text response
     sql_result = SQLResult(
         query=query,
         sql_query=sql_query,
@@ -201,11 +144,20 @@ def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=N
         column_names=execution_result["column_names"],
         rows=execution_result["rows"][:25],
         row_count=execution_result["row_count"],
-        has_visualization=needs_viz,
+        has_visualization=False,
     )
 
-    response_input = ResponseAgentInput(query=query, sql_result=sql_result)
-    response_output = response_agent.run(response_input)
+    response_output = response_agent.run(query, sql_result)
+    
+    # Debug: Show response generation for success case
+    if debug_container:
+        debug_input = {"query": query, "sql_result": sql_result}
+        show_agent_debug("Response Agent", debug_input, response_output, debug_container)
+    
+    # Debug: Show complete pipeline overview
+    if debug_container:
+        show_orchestrator_debug(query, classification, sql_output, execution_result, response_output, debug_container)
+    
     result["response_text"] = response_output.response
 
     return result

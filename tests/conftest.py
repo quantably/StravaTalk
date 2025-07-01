@@ -1,6 +1,5 @@
 import pytest
 import os
-import sqlite3
 import asyncio
 from dotenv import load_dotenv
 
@@ -14,51 +13,8 @@ def event_loop():
     yield loop
     loop.close()
 
-@pytest.fixture(scope="function")
-def test_db():
-    """Create a fresh test database for each test function."""
-    db_path = "test_strava.db"
-    
-    # Remove existing test DB
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    
-    # Create fresh test database with schema
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    # Create activities table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS activities (
-            id BIGINT PRIMARY KEY,
-            name TEXT,
-            distance REAL,
-            moving_time INTEGER,
-            elapsed_time INTEGER,
-            total_elevation_gain REAL,
-            type TEXT,
-            start_date TEXT
-        );
-    """)
-    
-    # Create tokens table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS tokens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            access_token TEXT NOT NULL,
-            refresh_token TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    
-    conn.commit()
-    conn.close()
-    
-    yield db_path
-    
-    # Cleanup after test
-    if os.path.exists(db_path):
-        os.remove(db_path)
+# Note: PostgreSQL test database setup should be handled externally
+# or through a proper test database configuration
 
 @pytest.fixture
 def strava_credentials():

@@ -13,9 +13,6 @@ logger = logging.getLogger(__name__)
 logger.info("🎯 Loading Streamlit app.py - starting imports...")
 
 try:
-    from atomic_agents.lib.components.agent_memory import AgentMemory
-    logger.info("✅ Imported AgentMemory")
-    
     from .orchestrator import initialize_agents, process_query
     logger.info("✅ Imported orchestrator")
     
@@ -88,30 +85,12 @@ def create_interface():
     dev_mode = not os.getenv("RESEND_API_KEY")
     
     if dev_mode:
-        # Development mode - use any existing token as current user
-        from .utils.db_utils import get_user_from_token
-        current_user = get_user_from_token()
-        
-        if not current_user:
-            st.warning("⚠️ No Strava data found in development mode.")
-            st.info("Make sure you have some activity data in your database.")
-            
-            # Show available users/tokens for development
-            with st.expander("🛠️ Development Info"):
-                st.code(f"""
-Development Mode Active (no RESEND_API_KEY)
-Authentication bypassed
-User ID: {user_id}
-User Email: {user_email}
-
-To connect Strava data, you can:
-1. Set RESEND_API_KEY to enable full auth flow
-2. Or manually populate the database with activity data
-                """)
-            st.stop()
+        # Development mode - use athlete with actual data
+        current_user = 12345678  # Use the athlete ID that has data in the database
         
         st.sidebar.info(f"🛠️ Development Mode")
         st.sidebar.success(f"👤 Dev User: {user_email}")
+        st.sidebar.success(f"📊 Using athlete data: {current_user}")
         
     else:
         # Production mode - check Strava connection
@@ -173,10 +152,11 @@ User Email: {user_email}
                 "text": "Welcome to the Strava Data Assistant! I can help you analyze your Strava activities. How can I assist you today?",
             }
         ]
+    
 
     if "shared_memory" not in st.session_state:
-        # Create AgentMemory without persistence to avoid serialization issues
-        st.session_state.shared_memory = AgentMemory(max_messages=0)
+        # Disable memory completely to avoid serialization issues in Docker
+        st.session_state.shared_memory = None
 
     if "agents" not in st.session_state:
         st.session_state.agents = initialize_agents(st.session_state.shared_memory)
@@ -247,8 +227,10 @@ def handle_query(user_query):
             logger.info(f"🚀 Processing query: {user_query}")
             logger.info(f"👤 Current user: {st.session_state.current_user}")
             
+            # Pass status container for debug output in dev mode
             result = process_query(
-                classify_agent, sql_agent, response_agent, user_query, st.session_state.current_user
+                classify_agent, sql_agent, response_agent, user_query, st.session_state.current_user, 
+                debug_container=status if is_debug_mode() else None
             )
             
             logger.info(f"✅ Query processing completed")
@@ -256,7 +238,7 @@ def handle_query(user_query):
             classification = result["classification"]
             status.write(f"Query type: {classification.query_type}")
 
-            if classification.query_type in [QueryType.SQL, QueryType.VIZ]:
+            if classification.query_type == QueryType.SQL:
                 if result.get("sql_query"):
                     status.write("SQL Query:")
                     status.code(result["sql_query"], language="sql")
@@ -267,8 +249,6 @@ def handle_query(user_query):
 
                         if is_debug_mode():
                             show_data_debug(result["data"], status)
-                            if result.get("chart_info"):
-                                show_chart_debug(result["chart_info"], status)
 
                     status.update(
                         label="Query processed successfully!", state="complete"
@@ -284,56 +264,12 @@ def handle_query(user_query):
             "sql_query": result.get("sql_query"),
         }
 
-        if (
-            result["chart_info"]
-            and result["data"] is not None
-            and not result["data"].empty
-        ):
-            chart_info = result["chart_info"]
-            x_column = chart_info["x_column"]
-            y_columns = chart_info["y_columns"]
-            chart_type = chart_info.get("chart_type", "line")
-
-            is_valid, valid_y_columns, _ = validate_chart_inputs(result["data"], x_column, y_columns)
-            
-            if is_valid:
-                assistant_message["chart_data"] = result["data"].to_dict("records")
-                assistant_message["chart_info"] = {
-                    "x_column": x_column,
-                    "y_columns": valid_y_columns,
-                    "chart_type": chart_type,
-                }
-
-                if "date" in x_column.lower() or "time" in x_column.lower():
-                    try:
-                        result["data"][x_column] = pd.to_datetime(
-                            result["data"][x_column]
-                        )
-                    except:
-                        pass
-
         st.session_state.chat_history.append(assistant_message)
         
         st.session_state.is_processing = False
 
         with st.chat_message("assistant"):
             st.markdown(result["response_text"])
-
-            if "chart_data" in assistant_message and "chart_info" in assistant_message:
-                try:
-                    data = pd.DataFrame(assistant_message["chart_data"])
-
-                    chart = create_visualization(
-                        data,
-                        assistant_message["chart_info"]["x_column"],
-                        assistant_message["chart_info"]["y_columns"],
-                        assistant_message["chart_info"].get("chart_type", "line"),
-                    )
-                    display_visualization(chart)
-                except Exception as e:
-                    st.error(f"Error displaying visualization: {str(e)}")
-                    if is_debug_mode():
-                        show_error_debug(e, data, assistant_message["chart_info"], st)
 
     except Exception as e:
         # Log the full error details

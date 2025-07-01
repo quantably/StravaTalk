@@ -118,3 +118,73 @@ def show_error_debug(error, data=None, chart_info=None, container=st):
             missing_y = [c for c in y_cols if c not in data.columns]
             if missing_y:
                 container.error(f"These Y-axis columns are missing: {missing_y}")
+
+def show_agent_debug(agent_name, input_data, output_data, container=st):
+    """Show agent input/output debug information"""
+    if not is_debug_mode():
+        return
+    
+    with container.expander(f"🤖 {agent_name} Debug", expanded=False):
+        container.write("**Input:**")
+        if hasattr(input_data, '__dict__'):
+            # Pydantic model
+            container.json(input_data.model_dump())
+        else:
+            container.write(str(input_data))
+        
+        container.write("**Output:**")
+        if hasattr(output_data, '__dict__'):
+            # Pydantic model
+            container.json(output_data.model_dump())
+        else:
+            container.write(str(output_data))
+
+def show_sql_debug(sql_query, execution_result, container=st):
+    """Show SQL query and execution debug information"""
+    if not is_debug_mode():
+        return
+    
+    with container.expander("🗄️ SQL Debug", expanded=False):
+        container.write("**Generated SQL:**")
+        container.code(sql_query, language="sql")
+        
+        container.write("**Execution Result:**")
+        container.write(f"- Success: {execution_result.get('success', False)}")
+        container.write(f"- Row count: {execution_result.get('row_count', 0)}")
+        
+        if execution_result.get('error_message'):
+            container.error(f"Error: {execution_result['error_message']}")
+        
+        if execution_result.get('column_names'):
+            container.write(f"- Columns: {execution_result['column_names']}")
+
+def show_orchestrator_debug(query, classification, sql_output, execution_result, response_output, container=st):
+    """Show complete orchestrator debug information"""
+    if not is_debug_mode():
+        return
+    
+    with container.expander("🎯 Complete Agent Pipeline Debug", expanded=True):
+        container.write("**User Query:**")
+        container.write(f"'{query}'")
+        
+        container.write("**1. Classification Result:**")
+        container.json({
+            "query_type": str(classification.query_type),
+            "explanation": classification.explanation,
+            "needs_visualization": getattr(classification, 'needs_visualization', False)
+        })
+        
+        if sql_output:
+            container.write("**2. SQL Generation:**")
+            container.code(sql_output.sql_query, language="sql")
+            
+            container.write("**3. SQL Execution:**")
+            container.json({
+                "success": execution_result.get('success', False),
+                "row_count": execution_result.get('row_count', 0),
+                "columns": execution_result.get('column_names', []),
+                "error": execution_result.get('error_message')
+            })
+        
+        container.write("**4. Response Generation:**")
+        container.write(f"Response: {response_output.response[:200]}..." if len(response_output.response) > 200 else response_output.response)

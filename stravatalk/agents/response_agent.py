@@ -1,87 +1,86 @@
 """
-Simplified response agent for creating natural language responses from SQL results.
+Simplified response agent using instructor directly.
 """
 
 from typing import List, Optional, Dict, Any
-from pydantic import Field
-
+from pydantic import BaseModel, Field
 import instructor
-from atomic_agents.agents.base_agent import BaseIOSchema, BaseAgent, BaseAgentConfig
-from atomic_agents.lib.components.system_prompt_generator import SystemPromptGenerator
-from atomic_agents.lib.components.agent_memory import AgentMemory
 
 
-class SQLResult(BaseIOSchema):
+class SQLResult(BaseModel):
     """Schema for SQL execution results."""
-
     query: str = Field(..., description="Original natural language query")
     sql_query: str = Field(..., description="SQL query that was executed")
     success: bool = Field(..., description="Whether query executed successfully")
-    error_message: Optional[str] = Field(
-        None, description="Error message if query failed"
-    )
-    column_names: Optional[List[str]] = Field(
-        None, description="Names of result columns"
-    )
-    rows: Optional[List[Dict[str, Any]]] = Field(
-        None, description="Result rows (up to 5 for context)"
-    )
+    error_message: Optional[str] = Field(None, description="Error message if query failed")
+    column_names: Optional[List[str]] = Field(None, description="Names of result columns")
+    rows: Optional[List[Dict[str, Any]]] = Field(None, description="Result rows")
     row_count: Optional[int] = Field(None, description="Total number of rows returned")
-    has_visualization: bool = Field(
-        False, description="Whether results will be visualized"
-    )
+    has_visualization: bool = Field(False, description="Whether visualization was created")
 
 
-class ResponseAgentInput(BaseIOSchema):
-    """Input schema for response generation."""
-
-    query: str = Field(..., description="Original natural language query")
-    sql_result: SQLResult = Field(..., description="SQL execution results")
-
-
-class ResponseAgentOutput(BaseIOSchema):
+class ResponseAgentOutput(BaseModel):
     """Output schema for response generation."""
+    response: str = Field(..., description="Natural language response to user")
 
-    response: str = Field(..., description="Natural language response to the query")
 
+def create_response_agent(client: instructor.client, model: str = "gpt-4o-mini", **kwargs):
+    """Creates a response agent using instructor directly."""
+    
+    def generate_response(query: str, sql_result: SQLResult) -> ResponseAgentOutput:
+        """Generate natural language response from SQL results."""
+        
+        system_prompt = """You create natural language responses from SQL query results for Strava fitness data.
 
-def create_response_agent(
-    client: instructor.client,
-    model: str = "gpt-4o-mini",
-    memory: Optional[AgentMemory] = None,
-) -> BaseAgent:
-    """Creates a response agent for Strava queries."""
+GUIDELINES:
+- Be conversational and encouraging about fitness activities
+- Format numbers clearly (use commas for large numbers)
+- Include relevant context from the data
+- If the query failed, explain what went wrong in simple terms
+- If no data was found, explain this clearly
+- Use fitness terminology appropriately
+- Be concise but informative
 
-    return BaseAgent(
-        BaseAgentConfig(
-            client=client,
-            memory=memory,
+FORMATTING:
+- Use **bold** for key numbers and metrics
+- Use bullet points for lists when appropriate
+- Include units (km, miles, minutes, etc.)
+- Format times in readable format (e.g., "2 hours 30 minutes")
+
+TONE:
+- Friendly and supportive
+- Focus on achievements and progress
+- Encourage continued activity
+"""
+
+        # Build context from SQL result
+        context = f"""
+Query: "{query}"
+SQL: {sql_result.sql_query}
+Success: {sql_result.success}
+"""
+
+        if sql_result.success:
+            context += f"Results: {sql_result.row_count} rows returned\n"
+            if sql_result.rows:
+                context += f"Sample data: {sql_result.rows[:3]}\n"  # First 3 rows
+        else:
+            context += f"Error: {sql_result.error_message}\n"
+
+        response = client.chat.completions.create(
             model=model,
-            system_prompt_generator=SystemPromptGenerator(
-                background=[
-                    "You create helpful, motivating responses about Strava fitness data.",
-                    "You interpret SQL results and present them in a user-friendly way.",
-                ],
-                steps=[
-                    "Review the original query and SQL results",
-                    "Extract key insights from the data",
-                    "Format the information in a clear, helpful way",
-                    "Adjust your response based on whether visualization will be provided",
-                ],
-                output_instructions=[
-                    "Use a friendly, encouraging tone",
-                    "Present data clearly with proper units, recognizing column names now include unit information:",
-                    "  - Columns ending with _km are in kilometers",
-                    "  - Columns ending with _minutes are in minutes",
-                    "  - Columns with pace_min_mi are in minutes per mile format",
-                    "Format time values in HH:MM:SS format (e.g., 1:23:45 instead of 83.75 minutes)",
-                    "Format pace values as MM:SS when presenting them (e.g., 8:30 min/mi rather than 8.5 min/mi)",
-                    "If visualization will be shown, focus on insights rather than describing all data points",
-                    "Keep answers concise but complete",
-                    "If SQL failed, explain the issue in user-friendly terms",
-                ],
-            ),
-            input_schema=ResponseAgentInput,
-            output_schema=ResponseAgentOutput,
+            response_model=ResponseAgentOutput,
+            temperature=0.3,  # Slightly higher for more natural responses
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Create a response for this query result:\n{context}"}
+            ]
         )
-    )
+        return response
+    
+    # Return an object that mimics the original agent interface  
+    class SimpleAgent:
+        def run(self, query: str, sql_result: SQLResult):
+            return generate_response(query, sql_result)
+    
+    return SimpleAgent()
