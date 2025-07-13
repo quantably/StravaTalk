@@ -7,6 +7,8 @@ import streamlit as st
 from dotenv import load_dotenv
 import pandas as pd
 import traceback
+import base64
+import os
 
 # Set up logging for the main app
 logger = logging.getLogger(__name__)
@@ -45,20 +47,55 @@ except Exception as e:
     st.stop()
 
 
+def get_logo_html():
+    """Get HTML for displaying the logo."""
+    try:
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "trackin-pro.png")
+        with open(logo_path, "rb") as f:
+            logo_data = base64.b64encode(f.read()).decode()
+        
+        return f"""
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="data:image/png;base64,{logo_data}" alt="trackin.pro" style="max-height: 80px;">
+        </div>
+        """
+    except Exception as e:
+        print(f"Could not load logo: {e}")
+        return ""
+
+def get_favicon():
+    """Get favicon from logo file."""
+    try:
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "trackin-pro.png")
+        return logo_path
+    except Exception as e:
+        print(f"Could not load favicon: {e}")
+        return None
+
 def create_interface():
     """Create the Streamlit interface for trackin.pro."""
-    st.set_page_config(page_title="trackin.pro", page_icon="📊", layout="centered", initial_sidebar_state="collapsed")  # Configure Streamlit page
+    # Try to use logo as favicon, fallback to emoji
+    favicon = get_favicon() or "📊"
+    st.set_page_config(page_title="trackin.pro", page_icon=favicon, layout="centered", initial_sidebar_state="collapsed")  # Configure Streamlit page
     
     if "is_processing" not in st.session_state:
         st.session_state.is_processing = False
     
     debug_mode = setup_debug_mode()
     
-    if debug_mode:
-        st.title("trackin.pro 📊 🐛")
-        show_debug_header()
+    # Display logo and title
+    logo_html = get_logo_html()
+    if logo_html:
+        st.markdown(logo_html, unsafe_allow_html=True)
     else:
-        st.title("trackin.pro 📊")
+        # Fallback to text if logo fails to load
+        if debug_mode:
+            st.title("trackin.pro 📊 🐛")
+        else:
+            st.title("trackin.pro 📊")
+    
+    if debug_mode:
+        show_debug_header()
         
     load_dotenv()
     

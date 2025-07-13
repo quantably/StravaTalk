@@ -5,6 +5,7 @@ Login page for StravaTalk magic link authentication.
 import streamlit as st
 import requests
 import os
+import base64
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 
@@ -13,11 +14,33 @@ load_dotenv()
 # Configuration
 FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
 
+def get_logo_base64():
+    """Get base64 encoded logo for embedding in HTML."""
+    try:
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "trackin-pro.png")
+        with open(logo_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    except Exception as e:
+        print(f"Could not load logo: {e}")
+        return ""
+
+def get_favicon():
+    """Get favicon from logo file."""
+    try:
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "trackin-pro.png")
+        return logo_path
+    except Exception as e:
+        print(f"Could not load favicon: {e}")
+        return None
+
 def show_login_page():
     """Display the login page with email entry."""
+    # Try to use logo as favicon, fallback to emoji
+    favicon = get_favicon() or "📊"
+    
     st.set_page_config(
         page_title="trackin.pro Login",
-        page_icon="📊",
+        page_icon=favicon,
         layout="centered",
         initial_sidebar_state="collapsed"
     )
@@ -44,13 +67,13 @@ def show_login_page():
     </style>
     """, unsafe_allow_html=True)
     
-    # Main header
+    # Main header with logo
     st.markdown("""
     <div class="main-header">
-        <h1>📊 trackin.pro</h1>
+        <img src="data:image/png;base64,{logo_data}" alt="trackin.pro" style="max-height: 120px; margin-bottom: 20px;">
         <p>Your AI-powered fitness data assistant</p>
     </div>
-    """, unsafe_allow_html=True)
+    """.format(logo_data=get_logo_base64()), unsafe_allow_html=True)
     
     # Check for session token in URL parameters
     query_params = st.query_params
