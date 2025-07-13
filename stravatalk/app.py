@@ -46,8 +46,8 @@ except Exception as e:
 
 
 def create_interface():
-    """Create the Streamlit interface for StravaTalk."""
-    st.set_page_config(page_title="StravaTalk", page_icon="🏃‍♂️", layout="centered", initial_sidebar_state="collapsed")  # Configure Streamlit page
+    """Create the Streamlit interface for trackin.pro."""
+    st.set_page_config(page_title="trackin.pro", page_icon="📊", layout="centered", initial_sidebar_state="collapsed")  # Configure Streamlit page
     
     if "is_processing" not in st.session_state:
         st.session_state.is_processing = False
@@ -55,10 +55,10 @@ def create_interface():
     debug_mode = setup_debug_mode()
     
     if debug_mode:
-        st.title("StravaTalk 🏃‍♂️ 🐛")
+        st.title("trackin.pro 📊 🐛")
         show_debug_header()
     else:
-        st.title("StravaTalk 🏃‍♂️")
+        st.title("trackin.pro 📊")
         
     load_dotenv()
     

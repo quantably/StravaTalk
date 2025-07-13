@@ -1,5 +1,5 @@
 """
-Authentication server for StravaTalk magic link system.
+Authentication server for trackin.pro magic link system.
 """
 
 from fastapi import FastAPI, Request, HTTPException, Query
@@ -23,7 +23,7 @@ from .utils.email_service import send_magic_link_email, send_welcome_email
 
 load_dotenv()
 
-app = FastAPI(title="StravaTalk Auth Server")
+app = FastAPI(title="trackin.pro Auth Server")
 templates = Jinja2Templates(directory="templates")
 
 STREAMLIT_URL = os.getenv("STREAMLIT_URL", "http://localhost:8501")
@@ -169,7 +169,7 @@ async def health_check():
     """Health check for the auth service."""
     return {
         "status": "healthy",
-        "service": "StravaTalk Auth Server",
+        "service": "trackin.pro Auth Server",
         "version": "1.1.0"
     }
 

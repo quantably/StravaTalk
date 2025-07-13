@@ -15,7 +15,7 @@ import time
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-logger.info("🚀 Starting StravaTalk Streamlit application with authentication...")
+logger.info("🚀 Starting trackin.pro Streamlit application with authentication...")
 
 # Add the current directory to Python path so stravatalk package can be imported
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -285,4 +285,4 @@ def validate_session_token(session_token: str) -> bool:
 if __name__ == "__main__":
     main()
 
-logger.info("🎉 StravaTalk app entry point completed!")
+logger.info("🎉 trackin.pro app entry point completed!")
