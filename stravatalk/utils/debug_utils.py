@@ -11,7 +11,13 @@ def is_debug_mode():
     return st.session_state.get("debug_mode", False)
 
 def setup_debug_mode():
-    """Setup debug mode from URL parameters"""
+    """Setup debug mode - disabled in production"""
+    # Never allow debug mode in production
+    is_production = os.getenv("ENVIRONMENT") == "production"
+    if is_production:
+        return False
+        
+    # Only allow in development
     try:
         # Try modern Streamlit API first
         query_params = st.query_params

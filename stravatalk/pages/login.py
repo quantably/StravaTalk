@@ -118,12 +118,14 @@ def show_login_page():
     # Additional info
     st.markdown("---")
     
-    # Debug info (show in development)
-    with st.expander("🔧 Debug Info"):
-        st.code(f"""
+    # Debug info (show in development only)
+    dev_mode = os.getenv("ENVIRONMENT") != "production"
+    if dev_mode:
+        with st.expander("🔧 Debug Info"):
+            st.code(f"""
 Environment Configuration:
 FASTAPI_URL: {FASTAPI_URL}
-        """)
+            """)
     
     st.markdown("""
     **🔒 Secure & Private**
@@ -144,8 +146,11 @@ def send_magic_link(email: str) -> bool:
         url = f"{FASTAPI_URL}/auth/send-magic-link"
         payload = {"email": email}
         
-        st.info(f"🔗 Sending request to: {url}")
-        st.info(f"📧 Email: {email}")
+        # Only show debug info in development
+        dev_mode = os.getenv("ENVIRONMENT") != "production"
+        if dev_mode:
+            st.info(f"🔗 Sending request to: {url}")
+            st.info(f"📧 Email: {email}")
         
         response = requests.post(
             url,
@@ -153,11 +158,13 @@ def send_magic_link(email: str) -> bool:
             timeout=10
         )
         
-        st.info(f"📡 Response status: {response.status_code}")
+        if dev_mode:
+            st.info(f"📡 Response status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
-            st.success(f"✅ Server response: {result}")
+            if dev_mode:
+                st.success(f"✅ Server response: {result}")
             return True
         else:
             error_detail = "Unknown error"

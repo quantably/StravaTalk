@@ -82,7 +82,7 @@ def create_interface():
     
     # Check if we're in development mode
     import os
-    dev_mode = not os.getenv("RESEND_API_KEY")
+    dev_mode = os.getenv("ENVIRONMENT") != "production"
     
     if dev_mode:
         # Development mode - use athlete with actual data
@@ -104,14 +104,15 @@ def create_interface():
                 oauth_url = f"https://stravatalk-api2.onrender.com/oauth/authorize?scope=read_all&session_token={session_token}"
                 st.markdown(f"[🔗 Connect Strava Account]({oauth_url})")
                 
-                # Debug info
-                with st.expander("🔧 Debug - OAuth Info"):
-                    st.code(f"""
+                # Debug info (dev mode only)
+                if dev_mode:
+                    with st.expander("🔧 Debug - OAuth Info"):
+                        st.code(f"""
 Session Token: {session_token[:30]}...
 OAuth URL: {oauth_url}
 User ID: {user_id}
 User Email: {user_email}
-                    """)
+                        """)
             else:
                 st.error("Session error. Please log in again.")
             st.stop()
@@ -122,6 +123,18 @@ User Email: {user_email}
     activity_count = get_user_activity_count(current_user)
     st.sidebar.success(f"👤 {user_email}")
     st.sidebar.info(f"📊 Activities: {activity_count}")
+    
+    # Add disconnect Strava button (only if not in dev mode)
+    if not dev_mode:
+        st.sidebar.markdown("---")
+        if st.sidebar.button("🔗 Disconnect Strava Account", type="secondary"):
+            from .utils.auth_utils import disconnect_strava_account
+            
+            if disconnect_strava_account(user_id):
+                st.sidebar.success("✅ Strava account disconnected")
+                st.rerun()
+            else:
+                st.sidebar.error("❌ Failed to disconnect Strava account")
     
     # Add logout button
     if st.sidebar.button("🚪 Logout"):
@@ -243,15 +256,16 @@ def handle_query(user_query):
             logger.info(f"✅ Query processing completed")
 
             classification = result["classification"]
-            status.write(f"Query type: {classification.query_type}")
+            if is_debug_mode():
+                status.write(f"Query type: {classification.query_type}")
 
             if classification.query_type in [QueryType.TEXT, QueryType.TEXT_AND_TABLE]:
-                if result.get("sql_query"):
+                if result.get("sql_query") and is_debug_mode():
                     status.write("SQL Query:")
                     status.code(result["sql_query"], language="sql")
 
                 if result["success"]:
-                    if result.get("data") is not None:
+                    if result.get("data") is not None and is_debug_mode():
                         status.write(f"Query returned {len(result['data'])} rows")
 
                         if is_debug_mode():

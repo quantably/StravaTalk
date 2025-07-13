@@ -28,11 +28,11 @@ def main():
     import os
     load_dotenv()
     
-    dev_mode = not os.getenv("RESEND_API_KEY")
+    dev_mode = os.getenv("ENVIRONMENT") != "production"
     
     if dev_mode:
         # Development mode - skip authentication
-        logger.info("🛠️ Development mode detected (no RESEND_API_KEY) - skipping authentication")
+        logger.info("🛠️ Development mode detected (ENVIRONMENT != production) - skipping authentication")
         
         # Set up minimal session state for development
         if "authenticated" not in st.session_state:

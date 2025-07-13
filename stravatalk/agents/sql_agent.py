@@ -44,7 +44,7 @@ RULES:
 - For count queries, use COUNT(*) or COUNT(column_name)
 - For date filtering, use start_date with proper date comparisons
 - Activity types are strings like 'Run', 'Swim', 'Ride'
-- For activity distance queries e.g. show my 5k runs. Acccount for the fact that GPS is innacurate and 1% in either direction e.g. 4050m to 5050m
+- For activity distance queries e.g. show my 5k runs. Acccount for the fact that GPS is innacurate and 1% in either direction e.g. 4950m to 5050m
 - If no time period is mentioned, assume it's across all the data
 
 UNIT CONVERSIONS (when appropriate):
