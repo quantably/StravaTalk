@@ -26,8 +26,7 @@ def get_cookie_manager():
             import streamlit_cookies_manager
             _cookie_manager = streamlit_cookies_manager.EncryptedCookieManager(
                 prefix="stravatalk/",
-                password=os.getenv("COOKIES_PASSWORD", "stravatalk-secret-key-2024"),
-                key="stravatalk_cookies"  # Unique key to prevent duplicates
+                password=os.getenv("COOKIES_PASSWORD", "stravatalk-secret-key-2024")
             )
         except ImportError:
             _cookie_manager = False  # Mark as unavailable
