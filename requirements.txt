@@ -1,4 +1,5 @@
 streamlit
+streamlit-cookies-manager
 openai
 instructor
 pandas

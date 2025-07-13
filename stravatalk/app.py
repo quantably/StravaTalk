@@ -86,7 +86,7 @@ def create_interface():
     
     if dev_mode:
         # Development mode - use athlete with actual data
-        current_user = 12345678  # Use the athlete ID that has data in the database
+        current_user = 149225109  # Use the athlete ID that has data in the database
         
         st.sidebar.info(f"🛠️ Development Mode")
         st.sidebar.success(f"👤 Dev User: {user_email}")
@@ -164,6 +164,12 @@ User Email: {user_email}
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["text"])
+            
+            # Display table if applicable for assistant messages
+            if (message["role"] == "assistant" and 
+                message.get("show_table") and 
+                message.get("data") is not None):
+                st.dataframe(message["data"], use_container_width=True)
 
             if st.session_state.is_processing:
                 continue
@@ -221,15 +227,16 @@ def handle_query(user_query):
         with st.chat_message("user"):
             st.markdown(user_query)
 
-        classify_agent, sql_agent, response_agent = st.session_state.agents
+        classify_agent, sql_agent, response_agent, table_response_agent, clarify_agent = st.session_state.agents
 
         with st.status("Processing your query...", expanded=False) as status:
             logger.info(f"🚀 Processing query: {user_query}")
             logger.info(f"👤 Current user: {st.session_state.current_user}")
             
+            
             # Pass status container for debug output in dev mode
             result = process_query(
-                classify_agent, sql_agent, response_agent, user_query, st.session_state.current_user, 
+                classify_agent, sql_agent, response_agent, table_response_agent, clarify_agent, user_query, st.session_state.current_user, 
                 debug_container=status if is_debug_mode() else None
             )
             
@@ -238,7 +245,7 @@ def handle_query(user_query):
             classification = result["classification"]
             status.write(f"Query type: {classification.query_type}")
 
-            if classification.query_type == QueryType.SQL:
+            if classification.query_type in [QueryType.TEXT, QueryType.TEXT_AND_TABLE]:
                 if result.get("sql_query"):
                     status.write("SQL Query:")
                     status.code(result["sql_query"], language="sql")
@@ -262,6 +269,8 @@ def handle_query(user_query):
             "role": "assistant",
             "text": result["response_text"],
             "sql_query": result.get("sql_query"),
+            "show_table": result.get("show_table", False),
+            "data": result.get("data"),
         }
 
         st.session_state.chat_history.append(assistant_message)
@@ -269,7 +278,12 @@ def handle_query(user_query):
         st.session_state.is_processing = False
 
         with st.chat_message("assistant"):
+            # Display supporting text
             st.markdown(result["response_text"])
+            
+            # Display table if applicable
+            if result.get("show_table") and result.get("data") is not None:
+                st.dataframe(result["data"], use_container_width=True)
 
     except Exception as e:
         # Log the full error details

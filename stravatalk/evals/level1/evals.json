@@ -1,0 +1,214 @@
+{
+    "version": "1.0",
+    "mock_current_date": "2024-01-15",
+    "test_scenarios": [
+      {
+        "id": "basic_run_count",
+        "description": "Basic run count query for specific month",
+        "turns": [
+          {
+            "user_input": "How many runs did I do in November 2023?",
+            "expected_classification": "TEXT",
+            "expected_text_contains": ["39", "runs", "November"],
+            "expected_text_not_contains": ["cycling", "swimming"]
+          }
+        ]
+      },
+      {
+        "id": "basic_swim_count_2023",
+        "description": "Basic swim count query for specific year",
+        "turns": [
+          {
+            "user_input": "How many swims did I do in 2023?",
+            "expected_classification": "TEXT",
+            "expected_text_contains": ["3 ", "2023"],
+            "expected_text_contains_any": ["swam", "swims", "swimming"],
+            "expected_text_not_contains": ["cycling", "running"]
+          }
+        ]
+      },
+      {
+        "id": "clarify_longest",
+        "description": "Longest activity query",
+        "turns": [
+          {
+            "user_input": "What was my longest activity in 2023?",
+            "expected_classification": "CLARIFY",
+            "expected_text_contains": ["distance", "time", "clarify"],
+            "expected_text_not_contains": ["168", "km", "104", "miles"]
+          }
+        ]
+      },
+      {
+        "id": "clarity_activity",
+        "description": "Pace clarify query",
+        "turns": [
+          {
+            "user_input": "What's my average pace?",
+            "expected_classification": "CLARIFY",
+            "expected_text_contains": ["activity", "type", "pace"],
+            "expected_text_not_contains": ["km"]
+          }
+        ]
+      },        
+      {
+        "id": "show_activity_types",
+        "description": "Show different activity types",
+        "turns": [
+          {
+            "user_input": "What are the different activity types I have done?",
+            "expected_classification": "TEXT_AND_TABLE",
+            "table_expected_row_count": 11,
+            "table_expected_columns": ["type", "count"]
+          }
+        ]
+      },
+      {
+        "id": "convert_runs_pace",
+        "description": "Correctly convert queries about running pace",
+        "turns": [
+          {
+            "user_input": "What was my average running pace in Nov 2023",
+            "expected_classification": "TEXT",
+            "expected_text_contains_any": ["4:56 min/km", "4:56/km"]
+          }
+        ]
+      },
+      {
+        "id": "approximate_distance",
+        "description": "Correctly approximates distance requests",
+        "turns": [
+          {
+            "user_input": "Show all my 10k runs",
+            "expected_classification": "TEXT_AND_TABLE",
+            "table_expected_row_count": 48
+          }
+        ]
+      },
+      {
+        "id": "highest_elevation_activity",
+        "description": "Correctly finds highest elevation activity",
+        "turns": [
+          {
+            "user_input": "Find my highest elevation cycling activity",
+            "expected_classification": "TEXT",
+            "expected_text_contains": ["El Camino de Santiago - Day 5", "2624"],
+            "expected_text_contains_any": ["2624", "2,624"]
+          }
+        ]
+      },
+      {
+        "id": "number_5k_activities",
+        "description": "Correctly computes number of approximate ~5k runs in DB",
+        "turns": [
+          {
+            "user_input": "How many 5k runs have I logged?",
+            "expected_classification": "TEXT",
+            "expected_text_contains": ["40"]
+          }
+        ]
+      },
+      {
+        "id": "xmas_day_activities",
+        "description": "Correctly finds all activities that occured on xmas day",
+        "turns": [
+          {
+            "user_input": "Show me all my christmas day activities",
+            "expected_classification": "TEXT_AND_TABLE",
+            "table_expected_row_count": 10
+          }
+        ]
+      },
+      {
+        "id": "unsupported_query",
+        "description": "Correctly classifies queries that are not supported",
+        "turns": [
+          {
+            "user_input": "What was the weather for my last run?",
+            "expected_classification": "UNSUPPORTED"
+          }
+        ]
+      },
+      {
+        "id": "unsupported_query2",
+        "description": "Correctly classifies queries that are not supported",
+        "turns": [
+          {
+            "user_input": "Are electrolytes good for post run nutrition?",
+            "expected_classification": "UNSUPPORTED"
+          }
+        ]
+      },
+      {
+        "id": "date_filtering",
+        "description": "Assess if complex temporal filtering is interpreted correctly",
+        "turns": [
+          {
+            "user_input": "Show all my activities from the week before last",
+            "expected_classification": "TEXT_AND_TABLE",
+            "table_expected_date_range": "2024-01-01:2024-01-07"
+          }
+        ]
+      },
+      {
+        "id": "last_week_runs_with_date_validation",
+        "description": "Test date range validation for last week's runs",
+        "turns": [
+          {
+            "user_input": "Show all my runs from last week",
+            "expected_classification": "TEXT_AND_TABLE",
+            "table_expected_date_range": "2024-01-08:2024-01-14",
+            "expected_text_contains": ["runs", "last week"]
+          }
+        ]
+      },
+      {
+        "id": "november_2023_activities",
+        "description": "Test specific month date range validation",
+        "turns": [
+          {
+            "user_input": "Show all my activities from November 2023",
+            "expected_classification": "TEXT_AND_TABLE", 
+            "table_expected_date_range": "2023-11-01:2023-11-30",
+            "expected_text_contains": ["November", "2023"]
+          }
+        ]
+      },
+      {
+        "id": "complex_table_validation",
+        "description": "Example of multiple table validations",
+        "turns": [
+          {
+            "user_input": "Show me all my cycling activities this year",
+            "expected_classification": "TEXT_AND_TABLE",
+            "table_expected_columns": ["name", "distance", "start_date", "type"],
+            "table_expected_date_range": "2025-01-01:2025-12-31",
+            "expected_text_contains": ["cycling", "activities"]
+          }
+        ]
+      },
+      {
+        "id": "valid_query_with_no_results",
+        "description": "Example of the user asking a valid query but for which there is no supporting data",
+        "turns": [
+          {
+            "user_input": "Show me all my Badminton activities for this year",
+            "expected_classification": "TEXT_AND_TABLE",
+            "table_expected_row_count": 0,
+            "expected_text_contains_any": ["wasn't", "couldn't", "unable"],
+            "expected_text_contains": ["find", "any"]
+          }
+        ]
+      },
+      {
+        "id": "query_unsupported_acitivity",
+        "description": "Query an activity that is not supported by the Strava API",
+        "turns": [
+          {
+            "user_input": "Show me all my Croquet activities for this year",
+            "expected_classification": "UNSUPPORTED"
+          }
+        ]
+      }
+    ]
+}

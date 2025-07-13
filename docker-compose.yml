@@ -11,11 +11,12 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FASTAPI_URL=http://fastapi:8000
     env_file:
       - .env
     volumes:
-      # Mount source code for development (comment out for production-like testing)
-      - ./stravatalk:/app/stravatalk
+      # Mount entire source tree for development hot-reloading
+      - .:/app
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8504/_stcore/health"]
@@ -43,9 +44,8 @@ services:
     env_file:
       - .env
     volumes:
-      # Mount source code for development (comment out for production-like testing)
-      - ./stravatalk:/app/stravatalk
-      - ./templates:/app/templates
+      # Mount entire source tree for development hot-reloading
+      - .:/app
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

@@ -4,31 +4,36 @@ Orchestrator for the StravaTalk application.
 
 import os
 import pandas as pd
-import openai
 import instructor
 
 from .agents.classify_agent import create_classification_agent, QueryType
 from .agents.response_agent import create_response_agent, SQLResult
+from .agents.table_response_agent import create_table_response_agent
+from .agents.clarify_agent import create_clarification_agent
 from .agents.sql_agent import create_sql_agent
 from .utils.db_utils import get_table_definitions, execute_sql_query
+import openai
 
 
-def initialize_agents(shared_memory=None):
+def initialize_agents(shared_memory=None, current_date=None):
     """Initialize all agents."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    client = instructor.from_openai(openai.OpenAI(api_key=api_key))
+    # Use OpenAI client
+    openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = instructor.from_openai(openai_client)
     model = "gpt-4o-mini"
 
     classify_agent = create_classification_agent(
-        client, memory=shared_memory, model=model
+        client, memory=shared_memory, model=model, current_date=current_date
     )
-    sql_agent = create_sql_agent(client, memory=shared_memory, model=model)
-    response_agent = create_response_agent(client, memory=shared_memory, model=model)
+    sql_agent = create_sql_agent(client, memory=shared_memory, model=model, current_date=current_date)
+    response_agent = create_response_agent(client, memory=shared_memory, model=model, current_date=current_date)
+    table_response_agent = create_table_response_agent(client, memory=shared_memory, model=model, current_date=current_date)
+    clarify_agent = create_clarification_agent(client, memory=shared_memory, model=model, current_date=current_date)
 
-    return classify_agent, sql_agent, response_agent
+    return classify_agent, sql_agent, response_agent, table_response_agent, clarify_agent
 
 
-def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=None, debug_container=None):
+def process_query(classify_agent, sql_agent, response_agent, table_response_agent, clarify_agent, query, athlete_id=None, debug_container=None):
     """Process a user query through the agent pipeline with optional user filtering."""
     from .utils.debug_utils import show_agent_debug, show_sql_debug, show_orchestrator_debug
 
@@ -48,15 +53,27 @@ def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=N
         "data": None,
         "chart_info": None,
         "sql_query": None,
+        "show_table": False,
     }
 
-    # Exit early if query isn't appropriate for SQL
-    if classification.query_type in [QueryType.CLARIFY, QueryType.UNSUPPORTED]:
+    # Handle CLARIFY queries
+    if classification.query_type == QueryType.CLARIFY:
+        clarify_output = clarify_agent.run(query)
+        result["response_text"] = clarify_output.response
+        
+        # Debug: Show clarify case
+        if debug_container:
+            debug_container.info(f"Query classified as CLARIFY - generating clarification questions")
+        
+        return result
+    
+    # Handle UNSUPPORTED queries
+    if classification.query_type == QueryType.UNSUPPORTED:
         result["response_text"] = classification.explanation
         
-        # Debug: Show early exit case
+        # Debug: Show unsupported case
         if debug_container:
-            debug_container.info(f"Query classified as {classification.query_type} - no SQL generation needed")
+            debug_container.info(f"Query classified as UNSUPPORTED - no SQL generation needed")
         
         return result
 
@@ -135,7 +152,7 @@ def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=N
         )
         result["data"] = df
 
-    # Step 4: Generate text response
+    # Step 4: Generate text response based on classification
     sql_result = SQLResult(
         query=query,
         sql_query=sql_query,
@@ -147,17 +164,35 @@ def process_query(classify_agent, sql_agent, response_agent, query, athlete_id=N
         has_visualization=False,
     )
 
-    response_output = response_agent.run(query, sql_result)
-    
-    # Debug: Show response generation for success case
-    if debug_container:
-        debug_input = {"query": query, "sql_result": sql_result}
-        show_agent_debug("Response Agent", debug_input, response_output, debug_container)
+    # Choose appropriate response agent based on classification
+    if classification.query_type == QueryType.TEXT_AND_TABLE:
+        # For table queries, limit to 50 rows as specified in requirements
+        if execution_result["success"] and execution_result["rows"]:
+            limited_rows = execution_result["rows"][:50]
+            result["data"] = pd.DataFrame(limited_rows, columns=execution_result["column_names"])
+        result["show_table"] = True
+        
+        # Use table response agent for supporting text
+        response_output = table_response_agent.run(query, sql_result)
+        
+        # Debug: Show table response generation
+        if debug_container:
+            debug_input = {"query": query, "sql_result": sql_result}
+            show_agent_debug("Table Response Agent", debug_input, response_output, debug_container)
+    else:
+        # TEXT queries use regular response agent
+        response_output = response_agent.run(query, sql_result)
+        
+        # Debug: Show text response generation
+        if debug_container:
+            debug_input = {"query": query, "sql_result": sql_result}
+            show_agent_debug("Response Agent", debug_input, response_output, debug_container)
     
     # Debug: Show complete pipeline overview
     if debug_container:
         show_orchestrator_debug(query, classification, sql_output, execution_result, response_output, debug_container)
     
     result["response_text"] = response_output.response
+
 
     return result

@@ -1,5 +1,5 @@
 """
-Simplified response agent using instructor directly.
+Table response agent for TEXT_AND_TABLE queries using instructor directly.
 """
 
 from typing import List, Optional, Dict, Any
@@ -19,44 +19,50 @@ class SQLResult(BaseModel):
     has_visualization: bool = Field(False, description="Whether visualization was created")
 
 
-class ResponseAgentOutput(BaseModel):
-    """Output schema for response generation."""
-    response: str = Field(..., description="Natural language response to user")
+class TableResponseOutput(BaseModel):
+    """Output schema for table response generation."""
+    response: str = Field(..., description="Supporting text to accompany the table")
 
 
-def create_response_agent(client: instructor.client, model: str = "gpt-4o-mini", current_date: str = None, **kwargs):
-    """Creates a response agent using instructor directly."""
+def create_table_response_agent(client: instructor.client, model: str = "gpt-4o-mini", current_date: str = None, **kwargs):
+    """Creates a table response agent using instructor directly."""
     
-    def generate_response(query: str, sql_result: SQLResult) -> ResponseAgentOutput:
-        """Generate natural language response from SQL results."""
+    def generate_table_response(query: str, sql_result: SQLResult) -> TableResponseOutput:
+        """Generate supporting text for table data."""
         
         # Add current date context if provided
         date_context = ""
         if current_date:
             date_context = f"\nCURRENT DATE: {current_date}\nUse this as the reference point for relative dates in your responses.\n"
         
-        system_prompt = f"""You create natural language responses from SQL query results for Strava fitness data.
+        system_prompt = f"""You create concise supporting text for table data from Strava fitness queries.
 {date_context}
+
+The table will be displayed to the user alongside your text response. Your job is to:
+- Provide context and highlights from the data
+- Point out interesting patterns or achievements
+- Be encouraging about fitness activities
+- Keep it brief since the detailed data is in the table
 
 GUIDELINES:
 - Be conversational and encouraging about fitness activities
-- Format numbers clearly (use commas for large numbers)
-- Include relevant context from the data
+- Highlight key insights from the data (totals, averages, trends)
 - If the query failed, explain what went wrong in simple terms
-- If no data was found, explain this clearly
+- If no data was found, explain this clearly and encourage more activity
 - Use fitness terminology appropriately
-- Be concise but informative
+- Keep responses concise - the table shows the details
 
 FORMATTING:
 - Use **bold** for key numbers and metrics
-- Use bullet points for lists when appropriate
 - Include units (km, miles, minutes, etc.)
 - Format times in readable format (e.g., "2 hours 30 minutes")
+- Use bullet points sparingly, only when helpful
 
 TONE:
 - Friendly and supportive
 - Focus on achievements and progress
 - Encourage continued activity
+- Avoid being overly technical
 """
 
         # Build context from SQL result
@@ -69,17 +75,19 @@ Success: {sql_result.success}
         if sql_result.success:
             context += f"Results: {sql_result.row_count} rows returned\n"
             if sql_result.rows:
-                context += f"Sample data: {sql_result.rows[:3]}\n"  # First 3 rows
+                context += f"Column names: {sql_result.column_names}\n"
+                # Show first few rows for context
+                context += f"Sample data: {sql_result.rows[:3]}\n"
         else:
             context += f"Error: {sql_result.error_message}\n"
 
         response = client.chat.completions.create(
             model=model,
-            response_model=ResponseAgentOutput,
+            response_model=TableResponseOutput,
             temperature=0.3,  # Slightly higher for more natural responses
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Create a response for this query result:\n{context}"}
+                {"role": "user", "content": f"Create supporting text for this table query result:\n{context}"}
             ]
         )
         return response
@@ -87,6 +95,6 @@ Success: {sql_result.success}
     # Return an object that mimics the original agent interface  
     class SimpleAgent:
         def run(self, query: str, sql_result: SQLResult):
-            return generate_response(query, sql_result)
+            return generate_table_response(query, sql_result)
     
     return SimpleAgent()

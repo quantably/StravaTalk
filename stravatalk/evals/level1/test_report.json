@@ -1,0 +1,621 @@
+{
+  "timestamp": "2025-07-13T12:37:28.428275",
+  "summary": {
+    "total_scenarios": 16,
+    "successful_scenarios": 11,
+    "total_assertions": 57,
+    "passed_assertions": 50,
+    "overall_success_rate": 0.8771929824561403
+  },
+  "scenarios": [
+    {
+      "id": "basic_run_count",
+      "description": "Basic run count query for specific month",
+      "user_query": "How many runs did I do in November 2023?",
+      "sql_query": "SELECT COUNT(*) FROM activities WHERE type = 'Run' AND start_date >= '2023-11-01' AND start_date < '2023-12-01'",
+      "success_rate": 1.0,
+      "total_assertions": 6,
+      "passed_assertions": 6,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text",
+          "actual": "text",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "39",
+          "actual": "In November 2023, you completed a total of **39 runs**! That's an impressive number, showcasing your dedication to staying active. Keep up the great work and continue to challenge yourself in your running journey!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "runs",
+          "actual": "In November 2023, you completed a total of **39 runs**! That's an impressive number, showcasing your dedication to staying active. Keep up the great work and continue to challenge yourself in your running journey!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "November",
+          "actual": "In November 2023, you completed a total of **39 runs**! That's an impressive number, showcasing your dedication to staying active. Keep up the great work and continue to challenge yourself in your running journey!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT cycling",
+          "actual": "In November 2023, you completed a total of **39 runs**! That's an impressive number, showcasing your dedication to staying active. Keep up the great work and continue to challenge yourself in your running journey!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT swimming",
+          "actual": "In November 2023, you completed a total of **39 runs**! That's an impressive number, showcasing your dedication to staying active. Keep up the great work and continue to challenge yourself in your running journey!",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "basic_swim_count_2023",
+      "description": "Basic swim count query for specific year",
+      "user_query": "How many swims did I do in 2023?",
+      "sql_query": "SELECT COUNT(*) FROM activities WHERE type = 'Swim' AND start_date >= '2023-01-01' AND start_date < '2024-01-01'",
+      "success_rate": 1.0,
+      "total_assertions": 6,
+      "passed_assertions": 6,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text",
+          "actual": "text",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "3 ",
+          "actual": "In 2023, you completed a total of **3 swims**! That's fantastic! Every swim contributes to your fitness journey, and it's great to see you making a splash. Keep up the great work and continue to enjoy your time in the water!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "2023",
+          "actual": "In 2023, you completed a total of **3 swims**! That's fantastic! Every swim contributes to your fitness journey, and it's great to see you making a splash. Keep up the great work and continue to enjoy your time in the water!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains_any",
+          "passed": true,
+          "expected": "ANY of: ['swam', 'swims', 'swimming']",
+          "actual": "In 2023, you completed a total of **3 swims**! That's fantastic! Every swim contributes to your fitness journey, and it's great to see you making a splash. Keep up the great work and continue to enjoy your time in the water!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT cycling",
+          "actual": "In 2023, you completed a total of **3 swims**! That's fantastic! Every swim contributes to your fitness journey, and it's great to see you making a splash. Keep up the great work and continue to enjoy your time in the water!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT running",
+          "actual": "In 2023, you completed a total of **3 swims**! That's fantastic! Every swim contributes to your fitness journey, and it's great to see you making a splash. Keep up the great work and continue to enjoy your time in the water!",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "clarify_longest",
+      "description": "Longest activity query",
+      "user_query": "What was my longest activity in 2023?",
+      "sql_query": "",
+      "success_rate": 1.0,
+      "total_assertions": 8,
+      "passed_assertions": 8,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "clarify",
+          "actual": "clarify",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "distance",
+          "actual": "I'd be happy to help you find your longest activity in 2023! To provide the most accurate information, could you clarify:\n- Are you referring to the longest activity by distance or by time?\n- Would you like to include all types of activities, or are you interested in a specific type (like running, cycling, etc.)?",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "time",
+          "actual": "I'd be happy to help you find your longest activity in 2023! To provide the most accurate information, could you clarify:\n- Are you referring to the longest activity by distance or by time?\n- Would you like to include all types of activities, or are you interested in a specific type (like running, cycling, etc.)?",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "clarify",
+          "actual": "I'd be happy to help you find your longest activity in 2023! To provide the most accurate information, could you clarify:\n- Are you referring to the longest activity by distance or by time?\n- Would you like to include all types of activities, or are you interested in a specific type (like running, cycling, etc.)?",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT 168",
+          "actual": "I'd be happy to help you find your longest activity in 2023! To provide the most accurate information, could you clarify:\n- Are you referring to the longest activity by distance or by time?\n- Would you like to include all types of activities, or are you interested in a specific type (like running, cycling, etc.)?",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT km",
+          "actual": "I'd be happy to help you find your longest activity in 2023! To provide the most accurate information, could you clarify:\n- Are you referring to the longest activity by distance or by time?\n- Would you like to include all types of activities, or are you interested in a specific type (like running, cycling, etc.)?",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT 104",
+          "actual": "I'd be happy to help you find your longest activity in 2023! To provide the most accurate information, could you clarify:\n- Are you referring to the longest activity by distance or by time?\n- Would you like to include all types of activities, or are you interested in a specific type (like running, cycling, etc.)?",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT miles",
+          "actual": "I'd be happy to help you find your longest activity in 2023! To provide the most accurate information, could you clarify:\n- Are you referring to the longest activity by distance or by time?\n- Would you like to include all types of activities, or are you interested in a specific type (like running, cycling, etc.)?",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "clarity_activity",
+      "description": "Pace clarify query",
+      "user_query": "What's my average pace?",
+      "sql_query": "",
+      "success_rate": 1.0,
+      "total_assertions": 5,
+      "passed_assertions": 5,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "clarify",
+          "actual": "clarify",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "activity",
+          "actual": "I'd love to help you find your average pace! To get the most accurate information, could you please clarify:\n- What type of activity are you referring to? (running, cycling, etc.)\n- Are you interested in your average pace over a specific time period? (this week, last month, etc.)",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "type",
+          "actual": "I'd love to help you find your average pace! To get the most accurate information, could you please clarify:\n- What type of activity are you referring to? (running, cycling, etc.)\n- Are you interested in your average pace over a specific time period? (this week, last month, etc.)",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "pace",
+          "actual": "I'd love to help you find your average pace! To get the most accurate information, could you please clarify:\n- What type of activity are you referring to? (running, cycling, etc.)\n- Are you interested in your average pace over a specific time period? (this week, last month, etc.)",
+          "error": null
+        },
+        {
+          "assertion_type": "text_not_contains",
+          "passed": true,
+          "expected": "NOT km",
+          "actual": "I'd love to help you find your average pace! To get the most accurate information, could you please clarify:\n- What type of activity are you referring to? (running, cycling, etc.)\n- Are you interested in your average pace over a specific time period? (this week, last month, etc.)",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "show_activity_types",
+      "description": "Show different activity types",
+      "user_query": "What are the different activity types I have done?",
+      "sql_query": "",
+      "success_rate": 0.0,
+      "total_assertions": 3,
+      "passed_assertions": 0,
+      "failed_assertions": 3,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": false,
+          "expected": "text_and_table",
+          "actual": "clarify",
+          "error": "Expected TEXT_AND_TABLE, got clarify"
+        },
+        {
+          "assertion_type": "table_row_count",
+          "passed": false,
+          "expected": 11,
+          "actual": null,
+          "error": "No table data returned"
+        },
+        {
+          "assertion_type": "table_columns",
+          "passed": false,
+          "expected": [
+            "type",
+            "count"
+          ],
+          "actual": null,
+          "error": "No table data returned"
+        }
+      ]
+    },
+    {
+      "id": "convert_runs_pace",
+      "description": "Correctly convert queries about running pace",
+      "user_query": "What was my average running pace in Nov 2023",
+      "sql_query": "SELECT FLOOR(AVG(moving_time/distance*1000)/60)||':'||LPAD(ROUND(MOD(AVG(moving_time/distance*1000)::numeric,60))::text,2,'0')||'/km' FROM activities WHERE type='Run' AND start_date>='2023-11-01' AND start_date<'2023-12-01' AND distance>0;",
+      "success_rate": 1.0,
+      "total_assertions": 2,
+      "passed_assertions": 2,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text",
+          "actual": "text",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains_any",
+          "passed": true,
+          "expected": "ANY of: ['4:56 min/km', '4:56/km']",
+          "actual": "In November 2023, you achieved an impressive average running pace of **4:56/km**! That's a fantastic pace, showcasing your dedication and hard work. Keep up the great effort, and continue to challenge yourself on your runs!",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "approximate_distance",
+      "description": "Correctly approximates distance requests",
+      "user_query": "Show all my 10k runs",
+      "sql_query": "SELECT * FROM activities WHERE type = 'Run' AND distance >= 10000 * 0.99 AND distance <= 10000 * 1.01",
+      "success_rate": 1.0,
+      "total_assertions": 2,
+      "passed_assertions": 2,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text_and_table",
+          "actual": "text_and_table",
+          "error": null
+        },
+        {
+          "assertion_type": "table_row_count",
+          "passed": true,
+          "expected": 48,
+          "actual": 48,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "highest_elevation_activity",
+      "description": "Correctly finds highest elevation activity",
+      "user_query": "Find my highest elevation cycling activity",
+      "sql_query": "SELECT * FROM activities WHERE type = 'Ride' ORDER BY total_elevation_gain DESC LIMIT 1",
+      "success_rate": 0.75,
+      "total_assertions": 4,
+      "passed_assertions": 3,
+      "failed_assertions": 1,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text",
+          "actual": "text",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "El Camino de Santiago - Day 5",
+          "actual": "Great job on your cycling journey! Your highest elevation ride was **\"El Camino de Santiago - Day 5\"**. Here are the impressive details:\n\n- **Distance:** 163 km\n- **Total Elevation Gain:** **2,624 meters**\n- **Moving Time:** 7 hours 32 minutes\n- **Elapsed Time:** 9 hours 17 minutes\n- **Date:** October 27, 2023\n\nWhat an achievement to tackle such a challenging route! Keep up the fantastic work and continue to push your limits!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": false,
+          "expected": "2624",
+          "actual": "Great job on your cycling journey! Your highest elevation ride was **\"El Camino de Santiago - Day 5\"**. Here are the impressive details:\n\n- **Distance:** 163 km\n- **Total Elevation Gain:** **2,624 meters**\n- **Moving Time:** 7 hours 32 minutes\n- **Elapsed Time:** 9 hours 17 minutes\n- **Date:** October 27, 2023\n\nWhat an achievement to tackle such a challenging route! Keep up the fantastic work and continue to push your limits!",
+          "error": "Text does not contain '2624'"
+        },
+        {
+          "assertion_type": "text_contains_any",
+          "passed": true,
+          "expected": "ANY of: ['2624', '2,624']",
+          "actual": "Great job on your cycling journey! Your highest elevation ride was **\"El Camino de Santiago - Day 5\"**. Here are the impressive details:\n\n- **Distance:** 163 km\n- **Total Elevation Gain:** **2,624 meters**\n- **Moving Time:** 7 hours 32 minutes\n- **Elapsed Time:** 9 hours 17 minutes\n- **Date:** October 27, 2023\n\nWhat an achievement to tackle such a challenging route! Keep up the fantastic work and continue to push your limits!",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "number_5k_activities",
+      "description": "Correctly computes number of approximate ~5k runs in DB",
+      "user_query": "How many 5k runs have I logged?",
+      "sql_query": "SELECT COUNT(*) FROM activities WHERE type = 'Run' AND distance >= 4050 AND distance <= 5050",
+      "success_rate": 0.5,
+      "total_assertions": 2,
+      "passed_assertions": 1,
+      "failed_assertions": 1,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text",
+          "actual": "text",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": false,
+          "expected": "40",
+          "actual": "Great job on your running journey! You've logged a total of **87** 5k runs. That's an impressive commitment to your fitness! Keep up the fantastic work and continue to challenge yourself with each run!",
+          "error": "Text does not contain '40'"
+        }
+      ]
+    },
+    {
+      "id": "xmas_day_activities",
+      "description": "Correctly finds all activities that occured on xmas day",
+      "user_query": "Show me all my christmas day activities",
+      "sql_query": "SELECT * FROM activities WHERE start_date = '2023-12-25'",
+      "success_rate": 0.5,
+      "total_assertions": 2,
+      "passed_assertions": 1,
+      "failed_assertions": 1,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text_and_table",
+          "actual": "text_and_table",
+          "error": null
+        },
+        {
+          "assertion_type": "table_row_count",
+          "passed": false,
+          "expected": 10,
+          "actual": null,
+          "error": "No table data returned"
+        }
+      ]
+    },
+    {
+      "id": "unsupported_query",
+      "description": "Correctly classifies queries that are not supported",
+      "user_query": "What was the weather for my last run?",
+      "sql_query": "",
+      "success_rate": 1.0,
+      "total_assertions": 1,
+      "passed_assertions": 1,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "unsupported",
+          "actual": "unsupported",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "unsupported_query2",
+      "description": "Correctly classifies queries that are not supported",
+      "user_query": "Are electrolytes good for post run nutrition?",
+      "sql_query": "",
+      "success_rate": 1.0,
+      "total_assertions": 1,
+      "passed_assertions": 1,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "unsupported",
+          "actual": "unsupported",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "date_filtering",
+      "description": "Assess if complex temporal filtering is interpreted correctly",
+      "user_query": "Show all my activities from the week before last",
+      "sql_query": "SELECT * FROM activities WHERE start_date >= '2024-01-01' AND start_date < '2024-01-08'",
+      "success_rate": 1.0,
+      "total_assertions": 2,
+      "passed_assertions": 2,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text_and_table",
+          "actual": "text_and_table",
+          "error": null
+        },
+        {
+          "assertion_type": "date_range",
+          "passed": true,
+          "expected": "2024-01-01 00:00:00 to 2024-01-07 00:00:00",
+          "actual": "2024-01-01 13:39:09 to 2024-01-07 17:13:42",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "last_week_runs_with_date_validation",
+      "description": "Test date range validation for last week's runs",
+      "user_query": "Show all my runs from last week",
+      "sql_query": "SELECT * FROM activities WHERE type = 'Run' AND start_date >= '2024-01-08' AND start_date < '2024-01-15'",
+      "success_rate": 1.0,
+      "total_assertions": 4,
+      "passed_assertions": 4,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text_and_table",
+          "actual": "text_and_table",
+          "error": null
+        },
+        {
+          "assertion_type": "date_range",
+          "passed": true,
+          "expected": "2024-01-08 00:00:00 to 2024-01-14 00:00:00",
+          "actual": "2024-01-09 19:07:00 to 2024-01-09 19:22:01",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "runs",
+          "actual": "Great job on your runs last week! Here are some highlights:\n\n- You completed **2 runs**, showcasing your commitment to staying active.\n- Your longest run was **8.1 km** (approximately **5 miles**) with a moving time of **30 minutes and 23 seconds**. That's an impressive distance!\n- You also had a shorter run of **2.2 km** (about **1.4 miles**) that you completed in just **11 minutes and 3 seconds**.\n- Keep up the fantastic work with your training, and consider setting a new distance goal for your next run!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "last week",
+          "actual": "Great job on your runs last week! Here are some highlights:\n\n- You completed **2 runs**, showcasing your commitment to staying active.\n- Your longest run was **8.1 km** (approximately **5 miles**) with a moving time of **30 minutes and 23 seconds**. That's an impressive distance!\n- You also had a shorter run of **2.2 km** (about **1.4 miles**) that you completed in just **11 minutes and 3 seconds**.\n- Keep up the fantastic work with your training, and consider setting a new distance goal for your next run!",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "november_2023_activities",
+      "description": "Test specific month date range validation",
+      "user_query": "Show all my activities from November 2023",
+      "sql_query": "SELECT * FROM activities WHERE start_date >= '2023-11-01' AND start_date < '2023-12-01'",
+      "success_rate": 1.0,
+      "total_assertions": 4,
+      "passed_assertions": 4,
+      "failed_assertions": 0,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text_and_table",
+          "actual": "text_and_table",
+          "error": null
+        },
+        {
+          "assertion_type": "date_range",
+          "passed": true,
+          "expected": "2023-11-01 00:00:00 to 2023-11-30 00:00:00",
+          "actual": "2023-11-01 07:49:57 to 2023-11-29 11:10:22",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "November",
+          "actual": "Great job on staying active in November 2023! Here are some highlights from your activities:\n\n- You completed a total of **39 activities**, showcasing your commitment to fitness.\n- Your runs varied in distance, with some impressive outings, including a **Lunch Run** of **8.99 km** and an **Evening Run** of **10.28 km**.\n- Keep up the momentum! Each run contributes to your overall fitness and endurance.\n\nIt's fantastic to see such dedication, and I encourage you to continue pushing your limits!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "2023",
+          "actual": "Great job on staying active in November 2023! Here are some highlights from your activities:\n\n- You completed a total of **39 activities**, showcasing your commitment to fitness.\n- Your runs varied in distance, with some impressive outings, including a **Lunch Run** of **8.99 km** and an **Evening Run** of **10.28 km**.\n- Keep up the momentum! Each run contributes to your overall fitness and endurance.\n\nIt's fantastic to see such dedication, and I encourage you to continue pushing your limits!",
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "complex_table_validation",
+      "description": "Example of multiple table validations",
+      "user_query": "Show me all my cycling activities this year",
+      "sql_query": "SELECT * FROM activities WHERE type = 'Ride' AND start_date >= '2024-01-01'",
+      "success_rate": 0.8,
+      "total_assertions": 5,
+      "passed_assertions": 4,
+      "failed_assertions": 1,
+      "test_results": [
+        {
+          "assertion_type": "classification",
+          "passed": true,
+          "expected": "text_and_table",
+          "actual": "text_and_table",
+          "error": null
+        },
+        {
+          "assertion_type": "table_columns",
+          "passed": true,
+          "expected": [
+            "name",
+            "distance",
+            "start_date",
+            "type"
+          ],
+          "actual": [
+            "id",
+            "name",
+            "distance",
+            "moving_time",
+            "elapsed_time",
+            "total_elevation_gain",
+            "type",
+            "start_date",
+            "athlete_id"
+          ],
+          "error": null
+        },
+        {
+          "assertion_type": "date_range",
+          "passed": false,
+          "expected": "2025-01-01 00:00:00 to 2025-12-31 00:00:00",
+          "actual": "2024-04-01 07:23:50 to 2025-03-27 19:46:56",
+          "error": "Some dates outside range 2025-01-01 00:00:00 to 2025-12-31 00:00:00"
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "cycling",
+          "actual": "Great job on your cycling activities this year! Here are some highlights:\n\n- You\u2019ve completed **12 rides** so far, showcasing your dedication to cycling.\n- Your rides have covered impressive distances, with a standout ride of **107.6 km** (approximately **66.8 miles**)!\n- Keep up the momentum, and consider setting new goals for distance or elevation gain as the year progresses. \n\nEvery ride counts towards your fitness journey, so keep pedaling!",
+          "error": null
+        },
+        {
+          "assertion_type": "text_contains",
+          "passed": true,
+          "expected": "activities",
+          "actual": "Great job on your cycling activities this year! Here are some highlights:\n\n- You\u2019ve completed **12 rides** so far, showcasing your dedication to cycling.\n- Your rides have covered impressive distances, with a standout ride of **107.6 km** (approximately **66.8 miles**)!\n- Keep up the momentum, and consider setting new goals for distance or elevation gain as the year progresses. \n\nEvery ride counts towards your fitness journey, so keep pedaling!",
+          "error": null
+        }
+      ]
+    }
+  ]
+}
