@@ -15,6 +15,24 @@ import time
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Global cookie manager instance to prevent duplicate element keys
+_cookie_manager = None
+
+def get_cookie_manager():
+    """Get or create a single cookie manager instance."""
+    global _cookie_manager
+    if _cookie_manager is None:
+        try:
+            import streamlit_cookies_manager
+            _cookie_manager = streamlit_cookies_manager.EncryptedCookieManager(
+                prefix="stravatalk/",
+                password=os.getenv("COOKIES_PASSWORD", "stravatalk-secret-key-2024"),
+                key="stravatalk_cookies"  # Unique key to prevent duplicates
+            )
+        except ImportError:
+            _cookie_manager = False  # Mark as unavailable
+    return _cookie_manager if _cookie_manager else None
+
 logger.info("🚀 Starting trackin.pro Streamlit application with authentication...")
 
 # Add the current directory to Python path so stravatalk package can be imported
@@ -159,24 +177,11 @@ def is_authenticated():
 
 def set_session_cookie(session_token):
     """Set session token in secure cookie."""
-    try:
-        import streamlit_cookies_manager
-        import os
-        
-        # Initialize with proper encryption
-        cookies = streamlit_cookies_manager.EncryptedCookieManager(
-            prefix="stravatalk/",
-            password=os.getenv("COOKIES_PASSWORD", "stravatalk-secret-key-2024")
-        )
-        
-        if cookies.ready():
-            cookies['strava_session'] = session_token
-            cookies.save()  # Force immediate save
-            return True
-        else:
-            return False  # Cookie manager not ready yet
-    except ImportError:
-        pass
+    cookies = get_cookie_manager()
+    if cookies and cookies.ready():
+        cookies['strava_session'] = session_token
+        cookies.save()  # Force immediate save
+        return True
     
     # Fallback to JavaScript approach
     st.markdown(f"""
@@ -188,23 +193,11 @@ def set_session_cookie(session_token):
 
 def get_session_cookie():
     """Get session token from cookie using streamlit-cookies-manager."""
-    try:
-        import streamlit_cookies_manager
-        import os
-        
-        # Initialize with proper encryption
-        cookies = streamlit_cookies_manager.EncryptedCookieManager(
-            prefix="stravatalk/",
-            password=os.getenv("COOKIES_PASSWORD", "stravatalk-secret-key-2024")
-        )
-        
-        # Check if cookies are ready
-        if not cookies.ready():
-            return None  # Don't stop, just return None if not ready
-        
+    cookies = get_cookie_manager()
+    if cookies and cookies.ready():
         return cookies.get('strava_session')
-        
-    except ImportError:
+    
+    # If cookie manager not available, try fallback:
         # Fallback to JavaScript approach if streamlit-cookies-manager is not available
         if not hasattr(st.session_state, 'cookie_check_done'):
             cookie_script = """
@@ -230,23 +223,12 @@ def get_session_cookie():
 
 def clear_session_cookie():
     """Clear session cookie."""
-    try:
-        import streamlit_cookies_manager
-        import os
-        
-        # Initialize with proper encryption
-        cookies = streamlit_cookies_manager.EncryptedCookieManager(
-            prefix="stravatalk/",
-            password=os.getenv("COOKIES_PASSWORD", "stravatalk-secret-key-2024")
-        )
-        
-        if cookies.ready():
-            if 'strava_session' in cookies:
-                del cookies['strava_session']
-            cookies.save()  # Force immediate save
-            return
-    except ImportError:
-        pass
+    cookies = get_cookie_manager()
+    if cookies and cookies.ready():
+        if 'strava_session' in cookies:
+            del cookies['strava_session']
+        cookies.save()  # Force immediate save
+        return
     
     # Fallback to JavaScript approach
     st.markdown("""
