@@ -278,8 +278,13 @@ User Email: {user_email}
         ]
     
 
+    # Initialize conversation memory
+    if "conversation_memory" not in st.session_state:
+        from .utils.memory import ConversationMemory
+        st.session_state.conversation_memory = ConversationMemory(max_entries=5)
+
     if "shared_memory" not in st.session_state:
-        # Disable memory completely to avoid serialization issues in Docker
+        # Disable atomic agents memory to avoid serialization issues in Docker
         st.session_state.shared_memory = None
 
     if "agents" not in st.session_state:
@@ -358,10 +363,11 @@ def handle_query(user_query):
             logger.info(f"👤 Current user: {st.session_state.current_user}")
             
             
-            # Pass status container for debug output in dev mode
+            # Pass status container for debug output in dev mode and memory for context
             result = process_query(
                 classify_agent, sql_agent, response_agent, table_response_agent, clarify_agent, user_query, st.session_state.current_user, 
-                debug_container=status if is_debug_mode() else None
+                debug_container=status if is_debug_mode() else None,
+                memory=st.session_state.conversation_memory
             )
             
             logger.info(f"✅ Query processing completed")
@@ -399,6 +405,26 @@ def handle_query(user_query):
         }
 
         st.session_state.chat_history.append(assistant_message)
+        
+        # Update conversation memory with this interaction
+        if result["success"]:
+            from .utils.memory import create_data_summary
+            
+            # Create summary of the results
+            data_summary = create_data_summary(
+                result.get("data"), 
+                str(classification.query_type), 
+                len(result["data"]) if result.get("data") is not None else 0
+            )
+            
+            # Add to memory
+            st.session_state.conversation_memory.add_entry(
+                user_query=user_query,
+                sql_query=result.get("sql_query"),
+                data_summary=data_summary,
+                result_count=len(result["data"]) if result.get("data") is not None else 0,
+                query_type=str(classification.query_type)
+            )
         
         st.session_state.is_processing = False
 

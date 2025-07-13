@@ -33,12 +33,22 @@ def initialize_agents(shared_memory=None, current_date=None):
     return classify_agent, sql_agent, response_agent, table_response_agent, clarify_agent
 
 
-def process_query(classify_agent, sql_agent, response_agent, table_response_agent, clarify_agent, query, athlete_id=None, debug_container=None):
-    """Process a user query through the agent pipeline with optional user filtering."""
+def process_query(classify_agent, sql_agent, response_agent, table_response_agent, clarify_agent, query, athlete_id=None, debug_container=None, memory=None):
+    """Process a user query through the agent pipeline with optional user filtering and memory context."""
     from .utils.debug_utils import show_agent_debug, show_sql_debug, show_orchestrator_debug
 
-    # Step 1: Classify the query
-    classification = classify_agent.run(query)
+    # Get memory context for this query
+    memory_context = ""
+    if memory:
+        memory_context = memory.get_context_for_query(query)
+    
+    # Enhance query with memory context if available
+    enhanced_query = query
+    if memory_context:
+        enhanced_query = f"{memory_context}\n\nCurrent query: {query}"
+
+    # Step 1: Classify the query (with memory context)
+    classification = classify_agent.run(enhanced_query)
 
     # Debug: Show classification step
     if debug_container:
@@ -81,7 +91,8 @@ def process_query(classify_agent, sql_agent, response_agent, table_response_agen
     tables = get_table_definitions()
 
     try:
-        sql_output = sql_agent.run(query, tables)
+        # Use enhanced query with memory context for SQL generation
+        sql_output = sql_agent.run(enhanced_query, tables)
         sql_query = sql_output.sql_query
         
         # Basic validation - just check we got a non-empty query
@@ -135,7 +146,7 @@ def process_query(classify_agent, sql_agent, response_agent, table_response_agen
             row_count=0,
             has_visualization=False,
         )
-        response_output = response_agent.run(query, sql_result)
+        response_output = response_agent.run(query, sql_result)  # Use original query for response
         
         # Debug: Show response generation for error case
         if debug_container:
@@ -172,8 +183,8 @@ def process_query(classify_agent, sql_agent, response_agent, table_response_agen
             result["data"] = pd.DataFrame(limited_rows, columns=execution_result["column_names"])
         result["show_table"] = True
         
-        # Use table response agent for supporting text
-        response_output = table_response_agent.run(query, sql_result)
+        # Use table response agent for supporting text  
+        response_output = table_response_agent.run(query, sql_result)  # Use original query for response
         
         # Debug: Show table response generation
         if debug_container:
@@ -181,7 +192,7 @@ def process_query(classify_agent, sql_agent, response_agent, table_response_agen
             show_agent_debug("Table Response Agent", debug_input, response_output, debug_container)
     else:
         # TEXT queries use regular response agent
-        response_output = response_agent.run(query, sql_result)
+        response_output = response_agent.run(query, sql_result)  # Use original query for response
         
         # Debug: Show text response generation
         if debug_container:
