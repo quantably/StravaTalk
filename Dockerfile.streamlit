@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY stravatalk/ ./stravatalk/
+COPY static/ ./static/
 COPY streamlit_app.py ./streamlit_app.py
 COPY streamlit_login_app.py ./streamlit_login_app.py
 COPY .env.example ./.env.example
