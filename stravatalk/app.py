@@ -9,6 +9,7 @@ import pandas as pd
 import traceback
 import base64
 import os
+import time
 
 # Set up logging for the main app
 logger = logging.getLogger(__name__)
@@ -71,6 +72,70 @@ def get_favicon():
     except Exception as e:
         print(f"Could not load favicon: {e}")
         return None
+
+def show_sync_interface(user_id: int, sync_service):
+    """Show the historical activities sync interface."""
+    st.markdown("## 🔄 Sync Your Activities")
+    st.markdown("Welcome! Let's sync your historical Strava activities so you can start asking questions about your training data.")
+    
+    sync_status = sync_service.check_sync_status(user_id)
+    current_count = sync_status.get("activity_count", 0)
+    
+    if current_count > 0:
+        st.info(f"📊 You currently have {current_count} activities. Syncing will fetch your complete history.")
+    else:
+        st.info("📊 No activities found. Let's fetch your complete Strava history!")
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        if st.button("🚀 Start Sync", type="primary", use_container_width=True):
+            st.session_state.sync_started = True
+            st.rerun()
+    
+    with col2:
+        if st.button("⏭️ Skip Sync", use_container_width=True):
+            # Mark as completed to skip sync
+            sync_service._complete_sync_status(user_id, current_count)
+            st.success("✅ Sync skipped. You can sync later from settings.")
+            st.rerun()
+    
+    # Show sync progress if started
+    if st.session_state.get("sync_started", False):
+        st.markdown("### 🔄 Syncing Activities...")
+        
+        # Create progress containers
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        def update_progress(count, message):
+            """Update progress bar and status text."""
+            # Estimate progress (we don't know total upfront)
+            estimated_total = max(100, count + 50)  # Rough estimate
+            progress = min(count / estimated_total, 0.95)  # Never reach 100% until done
+            progress_bar.progress(progress)
+            status_text.text(message)
+        
+        # Run the sync
+        with st.spinner("Fetching your activities from Strava..."):
+            result = sync_service.sync_historical_activities(user_id, update_progress)
+        
+        if result["success"]:
+            progress_bar.progress(1.0)
+            status_text.text(f"✅ Completed! Synced {result['activities_synced']} activities.")
+            st.success(f"🎉 Successfully synced {result['activities_synced']} activities!")
+            st.balloons()
+            
+            # Clear sync state and refresh
+            if 'sync_started' in st.session_state:
+                del st.session_state.sync_started
+            
+            time.sleep(2)  # Show success message briefly
+            st.rerun()
+        else:
+            st.error(f"❌ Sync failed: {result.get('error', 'Unknown error')}")
+            if 'sync_started' in st.session_state:
+                del st.session_state.sync_started
 
 def create_interface():
     """Create the Streamlit interface for trackin.pro."""
@@ -155,6 +220,15 @@ User Email: {user_email}
             st.stop()
         
         current_user = strava_connection["athlete_id"]
+        
+        # Check if user has synced their historical activities
+        from .utils.strava_sync import StravaSyncService
+        sync_service = StravaSyncService()
+        sync_status = sync_service.check_sync_status(user_id)
+        
+        if not sync_status.get("synced", False):
+            show_sync_interface(user_id, sync_service)
+            st.stop()
     
     # Display user info
     activity_count = get_user_activity_count(current_user)
