@@ -269,13 +269,16 @@ class StravaSyncService:
             """)
             
             if cursor.fetchone()[0]:
+                # Use UPSERT to handle both new records and updates
                 cursor.execute("""
-                    UPDATE user_sync_status 
-                    SET sync_completed = true, 
+                    INSERT INTO user_sync_status (user_id, sync_started, sync_completed, last_sync_date, total_activities_synced)
+                    VALUES (%s, NOW(), true, NOW(), %s)
+                    ON CONFLICT (user_id) 
+                    DO UPDATE SET 
+                        sync_completed = true, 
                         last_sync_date = NOW(),
                         total_activities_synced = %s
-                    WHERE user_id = %s
-                """, (activities_count, user_id))
+                """, (user_id, activities_count, activities_count))
                 conn.commit()
             else:
                 print("user_sync_status table does not exist, skipping status tracking")
