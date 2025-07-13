@@ -52,28 +52,17 @@ class ConversationMemory:
         if not self.entries:
             return ""
         
-        # Check if this looks like a clarification/follow-up
-        clarification_keywords = [
-            "that", "those", "more details", "break down", "show me",
-            "what about", "how about", "instead", "also", "and",
-            "previous", "last", "again", "same", "similar"
-        ]
+        # Always provide context from recent entries (simple approach)
+        # With only 3-5 entries max, the overhead is minimal
+        recent_context = []
+        for entry in self.entries[-3:]:  # Last 3 entries
+            context_line = f"Previous query: '{entry.user_query}'"
+            if entry.sql_query:
+                context_line += f" (SQL: {entry.sql_query[:100]}...)"
+            context_line += f" → {entry.data_summary}"
+            recent_context.append(context_line)
         
-        is_clarification = any(keyword in current_query.lower() for keyword in clarification_keywords)
-        
-        if is_clarification and self.entries:
-            # Return context from recent entries
-            recent_context = []
-            for entry in self.entries[-3:]:  # Last 3 entries
-                context_line = f"Previous query: '{entry.user_query}'"
-                if entry.sql_query:
-                    context_line += f" (SQL: {entry.sql_query[:100]}...)"
-                context_line += f" → {entry.data_summary}"
-                recent_context.append(context_line)
-            
-            return "Recent conversation context:\n" + "\n".join(recent_context)
-        
-        return ""
+        return "Recent conversation context:\n" + "\n".join(recent_context)
     
     def get_last_sql_query(self) -> Optional[str]:
         """Get the most recent SQL query."""
