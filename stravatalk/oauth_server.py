@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 import os
 import requests
 from dotenv import load_dotenv
@@ -10,21 +9,13 @@ from .utils.auth_utils import store_strava_connection
 load_dotenv()
 
 app = FastAPI(title="StravaTalk OAuth Server")
-templates = Jinja2Templates(directory="templates")
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 REDIRECT_URI = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:8001/oauth/callback")
 STREAMLIT_URL = os.getenv("STREAMLIT_URL", "http://localhost:8501")
 
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    """Home page with OAuth initiation."""
-    return templates.TemplateResponse("oauth_home.html", {
-        "request": request,
-        "client_id": CLIENT_ID,
-        "redirect_uri": REDIRECT_URI
-    })
+# Root endpoint removed - OAuth flow goes directly to /oauth/authorize
 
 @app.get("/oauth/authorize")
 async def initiate_oauth(scope: str = "read", session_token: str = None):
@@ -80,10 +71,7 @@ async def oauth_callback(request: Request, code: str = None, error: str = None, 
     from .utils.auth_utils import validate_session_token
     
     if error:
-        return templates.TemplateResponse("oauth_error.html", {
-            "request": request,
-            "error": error
-        })
+        return RedirectResponse(url=f"{STREAMLIT_URL}?error=oauth_error&message={error}")
     
     if not code:
         raise HTTPException(status_code=400, detail="No authorization code provided")
@@ -94,18 +82,12 @@ async def oauth_callback(request: Request, code: str = None, error: str = None, 
         session_token = state.split("session_token=")[1]
     
     if not session_token:
-        return templates.TemplateResponse("oauth_error.html", {
-            "request": request,
-            "error": "Missing session information. Please log in first."
-        })
+        return RedirectResponse(url=f"{STREAMLIT_URL}?error=missing_session")
     
     # Validate session
     session_info = validate_session_token(session_token)
     if not session_info:
-        return templates.TemplateResponse("oauth_error.html", {
-            "request": request,
-            "error": "Invalid or expired session. Please log in again."
-        })
+        return RedirectResponse(url=f"{STREAMLIT_URL}?error=invalid_session")
     
     try:
         # Exchange authorization code for access token
@@ -139,10 +121,7 @@ async def oauth_callback(request: Request, code: str = None, error: str = None, 
     except Exception as e:
         print(f"OAuth callback error: {e}")
         print(f"Token data received: {token_data if 'token_data' in locals() else 'No token data'}")
-        return templates.TemplateResponse("oauth_error.html", {
-            "request": request,
-            "error": str(e)
-        })
+        return RedirectResponse(url=f"{STREAMLIT_URL}?error=callback_error&message={str(e)}")
 
 def exchange_code_for_token(auth_code: str):
     """Exchange authorization code for access token."""

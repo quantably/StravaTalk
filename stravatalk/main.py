@@ -4,8 +4,6 @@ This serves as the entry point for production deployment.
 """
 
 from fastapi import FastAPI, Request, Query
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
 import os
 
 # Create main application
@@ -15,18 +13,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Initialize templates
-templates = Jinja2Templates(directory="../templates")
-
 # Import individual services from same package
 from . import oauth_server
 from . import webhook_handler
 from . import auth_server
 
-# Mount OAuth routes at root level (since OAuth expects specific paths)
-@app.get("/", response_class=HTMLResponse)
-async def oauth_home(request: Request):
-    return await oauth_server.home(request)
+# Root endpoint - redirect to documentation or return simple message
+@app.get("/")
+async def root():
+    return {"message": "trackin.pro API Services", "status": "running"}
 
 @app.get("/oauth/authorize") 
 async def oauth_authorize(scope: str = "read", session_token: str = None):
