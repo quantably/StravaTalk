@@ -483,14 +483,16 @@ def handle_query(user_query):
         
         # Save conversation to database
         from .utils.conversation_persistence import save_conversation_history, save_conversation_memory
-        session_id = save_conversation_history(
-            user_id, 
-            st.session_state.chat_history, 
-            st.session_state.get("session_id")
-        )
-        if session_id:
-            st.session_state.session_id = session_id
-            save_conversation_memory(user_id, st.session_state.conversation_memory, session_id)
+        user_id = st.session_state.get("user_id")
+        if user_id:
+            session_id = save_conversation_history(
+                user_id, 
+                st.session_state.chat_history, 
+                st.session_state.get("session_id")
+            )
+            if session_id:
+                st.session_state.session_id = session_id
+                save_conversation_memory(user_id, st.session_state.conversation_memory, session_id)
         
         st.session_state.is_processing = False
 
