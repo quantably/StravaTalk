@@ -3,7 +3,7 @@ Simplified classification agent using instructor directly.
 """
 
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 import instructor
 
 
@@ -19,6 +19,14 @@ class QueryClassifyOutput(BaseModel):
     """Output schema for classification."""
     query_type: QueryType = Field(..., description="Type of query")
     explanation: str = Field(..., description="Brief explanation of classification")
+    
+    @field_validator('query_type', mode='before')
+    @classmethod
+    def normalize_query_type(cls, v):
+        """Normalize query type to lowercase to handle case variations."""
+        if isinstance(v, str):
+            return v.lower()
+        return v
 
 
 def create_classification_agent(client: instructor.client, model: str = "gpt-4o-mini", current_date: str = None, **kwargs):
