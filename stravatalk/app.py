@@ -247,6 +247,29 @@ User Email: {user_email}
             else:
                 st.sidebar.error("❌ Failed to disconnect Strava account")
     
+    # Add conversation management buttons
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🗑️ Clear Conversation"):
+        from .utils.conversation_persistence import clear_conversation_history
+        from .utils.memory import ConversationMemory
+        
+        # Clear from database
+        session_id = st.session_state.get("session_id")
+        clear_conversation_history(user_id, session_id)
+        
+        # Clear from session state
+        st.session_state.chat_history = [
+            {
+                "role": "assistant",
+                "text": "Welcome to the Strava Data Assistant! I can help you analyze your Strava activities. How can I assist you today?",
+            }
+        ]
+        st.session_state.conversation_memory = ConversationMemory(max_entries=5)
+        st.session_state.session_id = None
+        
+        st.sidebar.success("✅ Conversation cleared")
+        st.rerun()
+    
     # Add logout button
     if st.sidebar.button("🚪 Logout"):
         # Clear session state
@@ -269,19 +292,46 @@ User Email: {user_email}
     if "current_user" not in st.session_state:
         st.session_state.current_user = current_user
 
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [
-            {
-                "role": "assistant",
-                "text": "Welcome to the Strava Data Assistant! I can help you analyze your Strava activities. How can I assist you today?",
-            }
-        ]
-    
-
-    # Initialize conversation memory
-    if "conversation_memory" not in st.session_state:
+    # Initialize or load conversation history and memory
+    if "chat_history" not in st.session_state or "conversation_memory" not in st.session_state:
+        from .utils.conversation_persistence import load_conversation_history, load_conversation_memory
         from .utils.memory import ConversationMemory
-        st.session_state.conversation_memory = ConversationMemory(max_entries=5)
+        
+        # Try to load existing conversation
+        loaded_history, session_id = load_conversation_history(user_id)
+        loaded_memory = load_conversation_memory(user_id, session_id)
+        
+        if loaded_history:
+            # Restore from database
+            st.session_state.chat_history = loaded_history
+            st.session_state.session_id = session_id
+            st.session_state.conversation_memory = loaded_memory or ConversationMemory(max_entries=5)
+            
+            # Restore memory from chat history if memory wasn't found
+            if not loaded_memory and loaded_history:
+                st.session_state.conversation_memory = ConversationMemory(max_entries=5)
+                # Rebuild memory from assistant messages in history
+                for msg in loaded_history:
+                    if (msg["role"] == "assistant" and 
+                        msg.get("sql_query") and 
+                        msg.get("data_summary")):
+                        st.session_state.conversation_memory.add_entry(
+                            user_query="Previous query",  # We don't store user queries separately
+                            sql_query=msg["sql_query"],
+                            data_summary=msg["data_summary"],
+                            result_count=msg.get("result_count", 0),
+                            query_type=msg.get("query_type", "TEXT")
+                        )
+        else:
+            # Start fresh
+            st.session_state.chat_history = [
+                {
+                    "role": "assistant",
+                    "text": "Welcome to the Strava Data Assistant! I can help you analyze your Strava activities. How can I assist you today?",
+                }
+            ]
+            st.session_state.conversation_memory = ConversationMemory(max_entries=5)
+            st.session_state.session_id = None
 
     if "shared_memory" not in st.session_state:
         # Disable atomic agents memory to avoid serialization issues in Docker
@@ -425,6 +475,22 @@ def handle_query(user_query):
                 result_count=len(result["data"]) if result.get("data") is not None else 0,
                 query_type=str(classification.query_type)
             )
+            
+            # Add data summary and metadata to assistant message for persistence
+            assistant_message["data_summary"] = data_summary
+            assistant_message["result_count"] = len(result["data"]) if result.get("data") is not None else 0
+            assistant_message["query_type"] = str(classification.query_type)
+        
+        # Save conversation to database
+        from .utils.conversation_persistence import save_conversation_history, save_conversation_memory
+        session_id = save_conversation_history(
+            user_id, 
+            st.session_state.chat_history, 
+            st.session_state.get("session_id")
+        )
+        if session_id:
+            st.session_state.session_id = session_id
+            save_conversation_memory(user_id, st.session_state.conversation_memory, session_id)
         
         st.session_state.is_processing = False
 
